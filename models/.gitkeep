@@ -1,0 +1,2 @@
+# This directory stores trained AI model weights.
+# Model files (.bin, .onnx, .pt) are gitignored due to size.

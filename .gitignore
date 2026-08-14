@@ -1,0 +1,65 @@
+# ──────────────────────────────────────────────
+# VeritasAI — .gitignore
+# ──────────────────────────────────────────────
+
+# ── Environment ──
+.env
+.env.local
+.env.*.local
+
+# ── Python ──
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+*.egg
+.venv/
+venv/
+dist/
+build/
+*.whl
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# ── Node ──
+node_modules/
+frontend/dist/
+frontend/.vite/
+*.tsbuildinfo
+
+# ── AI Models (too large for Git) ──
+models/**/*.bin
+models/**/*.onnx
+models/**/*.pt
+models/**/*.safetensors
+models/**/*.h5
+!models/**/.gitkeep
+
+# ── Datasets ──
+notebooks/data/raw/
+notebooks/data/processed/
+notebooks/data/augmented/
+!notebooks/data/**/.gitkeep
+
+# ── Docker ──
+*.log
+
+# ── IDE ──
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── OS ──
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ── Misc ──
+*.bak
+*.tmp

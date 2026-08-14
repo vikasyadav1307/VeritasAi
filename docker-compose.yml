@@ -1,0 +1,108 @@
+# ──────────────────────────────────────────────
+# VeritasAI — Docker Compose (Development)
+# ──────────────────────────────────────────────
+
+services:
+  # ── PostgreSQL ──
+  postgres:
+    image: postgres:16-alpine
+    container_name: veritasai-postgres
+    environment:
+      POSTGRES_USER: veritas
+      POSTGRES_PASSWORD: veritas
+      POSTGRES_DB: veritasai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U veritas -d veritasai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - veritasai-network
+
+  # ── Redis ──
+  redis:
+    image: redis:7-alpine
+    container_name: veritasai-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - veritasai-network
+
+  # ── Backend (FastAPI) ──
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: veritasai-backend
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://veritas:veritas@postgres:5432/veritasai
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/app:/app/app        # Hot reload in development
+      - ./models:/app/models:ro        # Read-only model access
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - veritasai-network
+
+  # ── Frontend (Vite Dev Server) ──
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: veritasai-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - veritasai-network
+
+  # ── Nginx (Reverse Proxy) ──
+  nginx:
+    image: nginx:alpine
+    container_name: veritasai-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - veritasai-network
+
+volumes:
+  postgres_data:
+    name: veritasai-postgres-data
+  redis_data:
+    name: veritasai-redis-data
+
+networks:
+  veritasai-network:
+    name: veritasai-network
+    driver: bridge

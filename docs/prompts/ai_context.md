@@ -17,10 +17,32 @@ Codename: **VeritasAI**. Solo-developer FYP. 16-week timeline.
 
 ## Current State
 
-- **Phase**: 1 — Core AI
-- **Sprint**: 2 (starting)
-- **Completed**: Phase 0 scaffolding (Monorepo, FastAPI, React+Vite, Docker, CI/CD)
-- **Next**: Data collection, fake news model training, sentiment model training
+- **Phase**: 1 — Core AI Pipeline
+- **Sprint**: 2 (completed)
+- **Status**: Foundation closed. Analysis API hardened. Models still mock-only.
+- **Next**: Sprint 3 — Train or integrate real AI models
+
+## Completed Work
+
+### Phase 0 — Foundation (Sprint 1)
+- Monorepo structure, FastAPI + React scaffolding, Docker Compose, CI/CD, pre-commit
+- 1 git commit: `a2b462a chore(project): Initial commit with project scaffolding`
+
+### Phase 1 — Sprint 2
+- Created `docs/prompts/START_HERE.md` and `AI_RULES.md`
+- Created `docs/phases/phase-01/CURRENT_SPRINT.md`
+- Hardened `analysis/router.py` — proper Pydantic V2 models, `is_mock` flag, `processing_time_ms`, structured error handling
+- Made `analysis/services.py` async with structlog logging and per-model timing
+- Rewrote `detection/model.py` and `sentiment/model.py` — structlog, type annotations, `ModelStatus` enum, `PredictionResult` dataclass
+- Expanded test suite: 20 tests (7 analysis + 8 validation + 5 health), all passing
+- Verified backend starts and endpoint returns correct mock response
+- Fixed documentation inconsistencies (state mismatch, missing files)
+
+## Current Task
+
+- **Sprint 3**: Train or integrate real AI models
+  - Option A: Prepare notebooks for Colab/Kaggle GPU execution
+  - Option B: Integrate pre-trained HuggingFace pipeline models for end-to-end verification
 
 ## Folder Structure
 
@@ -30,57 +52,21 @@ veritasai/
 ├── frontend/src/          # React (features/, components/, services/, store/)
 ├── models/                # AI model weights (gitignored)
 ├── notebooks/             # Training notebooks
-├── e2e/                   # Playwright E2E tests
-├── docs/                  # Documentation (20 files)
+├── datasets/              # Training data (fake_news + sentiment CSVs)
+├── docs/                  # Documentation (20+ files)
+├── docs/phases/phase-01/  # Current phase sprint docs
 ├── docker/                # Dockerfiles, nginx configs
 ├── .github/workflows/     # CI/CD
 └── docker-compose.yml
 ```
 
-## Backend Modules
-
-`auth` · `analysis` · `detection` · `sentiment` · `language` · `explainability` · `input_processing` · `history` · `analytics` · `admin` · `export` · `feedback` · `model_registry`
-
 ## Key Endpoints
 
-| Method | Path                      | Auth   | Phase |
-| ------ | ------------------------- | ------ | ----- |
-| POST   | /api/v1/auth/register     | Public | 2     |
-| POST   | /api/v1/auth/login        | Public | 2     |
-| POST   | /api/v1/analyze/text      | JWT    | 1     |
-| POST   | /api/v1/analyze/url       | JWT    | 3     |
-| POST   | /api/v1/analyze/image     | JWT    | 3     |
-| GET    | /api/v1/history           | JWT    | 2     |
-| GET    | /api/v1/analytics/summary | JWT    | 4     |
-| GET    | /health                   | Public | 0     |
-
-## Database Tables
-
-`users` · `analysis_results` · `refresh_tokens` · `api_keys` · `model_metadata` · `feedback` · `audit_logs`
-
-PKs: UUID v4. Timestamps: `created_at`, `updated_at` (UTC). Soft deletes: `deleted_at`.
-
-## Completed Features
-
-- Monorepo scaffolded with Docker Compose and CI/CD
-- Basic frontend shell (React + Vite) with design system
-- Basic backend shell (FastAPI) with health checks
-- Alembic database migration setup
-
-## Pending Features (Ordered)
-
-1. Fake news detection model training (Phase 1)
-3. Sentiment analysis model training (Phase 1)
-4. Analysis API endpoint (Phase 1)
-5. Auth system — JWT + RBAC (Phase 2)
-6. Analysis page — text input + results display (Phase 2)
-7. History page (Phase 2)
-8. XAI — LIME + attention visualization (Phase 3)
-9. OCR + URL scraping + translation + summarization (Phase 3)
-10. Analytics dashboard + admin panel + export (Phase 4)
-11. ONNX optimization + UI polish (Phase 5)
-12. Full test suite + security hardening (Phase 6)
-13. Cloud deployment + demo (Phase 7)
+| Method | Path                      | Auth   | Status |
+| ------ | ------------------------- | ------ | ------ |
+| GET    | /health                   | Public | ✅ Working |
+| GET    | /health/ready             | Public | ✅ Working |
+| POST   | /api/v1/analyze/text      | Public | ✅ Working (mock) |
 
 ## Rules
 
@@ -93,7 +79,6 @@ PKs: UUID v4. Timestamps: `created_at`, `updated_at` (UTC). Soft deletes: `delet
 - Structured logging (structlog) — never `print()`
 - No secrets in code — `.env` only
 - Commit format: `type(scope): subject`
-- Branch format: `type/short-description`
 
 ## Important Decisions
 
@@ -105,18 +90,15 @@ PKs: UUID v4. Timestamps: `created_at`, `updated_at` (UTC). Soft deletes: `delet
 | 4 | PostgreSQL | Relational + JSONB; free tier on Supabase |
 | 5 | XLM-RoBERTa | Best cross-lingual transfer; 100 languages |
 | 6 | LIME (primary XAI) | Model-agnostic; intuitive for users |
+| 7 | Mock fallback | Models return mock data until trained — `is_mock` flag in API response |
 
-## Next Tasks
+## Known Issues
 
-```
-- [ ] Research dataset sources (Kaggle/HuggingFace) for multilingual fake news
-- [ ] Create Jupyter notebook for data exploration and preprocessing
-- [ ] Fine-tune XLM-RoBERTa for fake news detection
-- [ ] Fine-tune XLM-RoBERTa for sentiment analysis
-- [ ] Evaluate models (F1-score, accuracy) and save to models/
-- [ ] Implement inference API endpoints (FastAPI)
-```
+- No trained models — API returns mock predictions with `is_mock: true`
+- First request is slow (~90s cold start) due to torch/transformers import
+- No git tags yet (v0.1.0-foundation not created)
+- Docker Compose not verified end-to-end
 
 ## Documentation Map
 
-Level 1 (Stable): `00`–`06`, `15` | Level 2 (Read every session): This file, `AI_RULES.md` | Level 3 (Updated often): `09`, `10`, `11`, `12`
+Level 1 (Stable): `00`–`08`, `15` | Level 2 (Read every session): This file, `AI_RULES.md`, `START_HERE.md` | Level 3 (Updated often): `09`, `10`, `11`, `12`

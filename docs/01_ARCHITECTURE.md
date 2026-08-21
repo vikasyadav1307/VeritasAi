@@ -1,621 +1,627 @@
 # 01 — System Architecture
 
-> **VeritasAI — Multilingual Fake News Detection and Sentiment Analysis**
-
-| Field              | Value                                                              |
-| ------------------ | ------------------------------------------------------------------ |
-| **Document ID**    | DOC-01                                                             |
-| **Version**        | 1.0.0                                                              |
-| **Status**         | Draft                                                              |
-| **Author**         | Vikas (Lead / Architect)                                           |
-| **Created**        | 2026-08-13                                                         |
-| **Last Updated**   | 2026-08-13                                                         |
-| **Parent**         | `00_PROJECT_VISION.md`                                             |
+> **VerifAI — Multilingual Fake News Detection and Sentiment Analysis**
+>
+> Architecture Design Document
 
 ---
 
 ## 1. Architecture Overview
 
-VeritasAI follows a **Modular Monolith** architecture — a single deployable unit with clearly bounded internal modules that can be extracted into independent services if needed. This approach balances the simplicity required for a solo-developer FYP with the structural discipline of a production system.
+VerifAI follows a **Modular Monolith** architecture with clearly defined domain boundaries, enabling future extraction into microservices without rewrites. The system is organized into three major tiers — **Presentation**, **Application**, and **Infrastructure** — aligned with Clean Architecture principles.
 
-### 1.1 Architecture Style
+### 1.1 Architecture Style Decision
 
-| Property                | Choice                              | Rationale                                                        |
-| ----------------------- | ----------------------------------- | ---------------------------------------------------------------- |
-| **Pattern**             | Modular Monolith                    | Solo developer; avoids operational overhead of microservices     |
-| **API Style**           | REST (JSON over HTTP)               | Universal client support; tooling maturity                       |
-| **Frontend Pattern**    | Single Page Application (SPA)       | Rich interactivity; decoupled from backend                       |
-| **Backend Pattern**     | Clean Architecture (Layered)        | Testable, maintainable, dependency-inversion compliant           |
-| **AI Serving**          | In-process (same backend)           | Avoids inter-service latency; can extract later via model server |
-| **Communication**       | Synchronous (REST) + async tasks    | Background tasks for heavy inference; REST for CRUD              |
-| **Deployment**          | Docker Compose (single host)        | Matches budget and demo constraints                              |
+| Option | Pros | Cons | Verdict |
+|---|---|---|---|
+| Pure Monolith | Simple, fast to build | Tight coupling, hard to scale | ❌ |
+| Microservices | Independent scaling, fault isolation | Overkill for solo dev, operational complexity | ❌ |
+| **Modular Monolith** | Clean boundaries, single deployment, easy to extract later | Requires discipline | ✅ Chosen |
 
-### 1.2 Microservice Readiness
-
-Although deployed as a monolith, every module communicates through **internal service interfaces** (Python protocols / abstract base classes). This means any module can be extracted into a standalone service by:
-
-1. Replacing the in-process call with an HTTP/gRPC client.
-2. Deploying the module behind its own API gateway route.
-3. Adding a message queue for async communication.
-
-No module directly imports another module's internal implementation.
+> **Rationale:** A solo developer building within a 16-week timeline cannot operate multiple services. A modular monolith gives us domain isolation (microservice-ready boundaries) with the simplicity of a single deployment unit.
 
 ---
 
-## 2. High-Level System Diagram
+## 2. High-Level System Architecture
 
 ```
-┌──────────────────────────────────────────────────────────────────────────┐
-│                              CLIENT LAYER                                │
-│                                                                          │
-│   ┌──────────────┐   ┌──────────────┐   ┌──────────────────────────┐    │
-│   │  React SPA   │   │  REST Client │   │  Browser Extension (v2)  │    │
-│   │  (Vite)      │   │  (Postman/   │   │  (Stretch Goal)          │    │
-│   │              │   │   cURL)      │   │                          │    │
-│   └──────┬───────┘   └──────┬───────┘   └────────────┬─────────────┘    │
-│          │                  │                         │                   │
-└──────────┼──────────────────┼─────────────────────────┼──────────────────┘
-           │                  │                         │
-           ▼                  ▼                         ▼
-┌──────────────────────────────────────────────────────────────────────────┐
-│                           API GATEWAY LAYER                              │
-│                                                                          │
-│   ┌─────────────────────────────────────────────────────────────────┐    │
-│   │                    Nginx / Traefik Reverse Proxy                │    │
-│   │         (SSL termination, rate limiting, static files)          │    │
-│   └─────────────────────────────┬───────────────────────────────────┘    │
-│                                 │                                        │
-└─────────────────────────────────┼────────────────────────────────────────┘
-                                  │
-                                  ▼
-┌──────────────────────────────────────────────────────────────────────────┐
-│                         APPLICATION LAYER                                │
-│                         (FastAPI Backend)                                 │
-│                                                                          │
-│   ┌──────────────────────────────────────────────────────────────────┐   │
-│   │                      API Router Layer                            │   │
-│   │  /api/v1/auth  /api/v1/analyze  /api/v1/history  /api/v1/admin  │   │
-│   └──────────────────────────┬───────────────────────────────────────┘   │
-│                              │                                           │
-│   ┌──────────────────────────▼───────────────────────────────────────┐   │
-│   │                     Service Layer                                │   │
-│   │                                                                  │   │
-│   │  ┌────────────┐ ┌─────────────┐ ┌────────────┐ ┌─────────────┐ │   │
-│   │  │ Auth       │ │ Analysis    │ │ History    │ │ Admin       │ │   │
-│   │  │ Service    │ │ Orchestrator│ │ Service    │ │ Service     │ │   │
-│   │  └────────────┘ └──────┬──────┘ └────────────┘ └─────────────┘ │   │
-│   │                        │                                         │   │
-│   └────────────────────────┼─────────────────────────────────────────┘   │
-│                            │                                             │
-│   ┌────────────────────────▼─────────────────────────────────────────┐   │
-│   │                     AI Engine Layer                               │   │
-│   │                                                                  │   │
-│   │  ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌──────────────┐ │   │
-│   │  │ Fake News  │ │ Sentiment  │ │ Language   │ │ Explainer    │ │   │
-│   │  │ Detector   │ │ Analyzer   │ │ Services   │ │ (XAI)        │ │   │
-│   │  │            │ │            │ │ • Detect   │ │ • LIME       │ │   │
-│   │  │ • mBERT    │ │ • XLM-R    │ │ • Translate│ │ • SHAP       │ │   │
-│   │  │ • XLM-R    │ │            │ │ • Summarize│ │ • Attention  │ │   │
-│   │  └────────────┘ └────────────┘ └────────────┘ └──────────────┘ │   │
-│   │                                                                  │   │
-│   │  ┌────────────┐ ┌────────────┐                                  │   │
-│   │  │ Input      │ │ Model      │                                  │   │
-│   │  │ Processors │ │ Registry   │                                  │   │
-│   │  │ • OCR      │ │ • Loading  │                                  │   │
-│   │  │ • Scraper  │ │ • Caching  │                                  │   │
-│   │  │ • Cleaner  │ │ • Versioning│                                 │   │
-│   │  └────────────┘ └────────────┘                                  │   │
-│   │                                                                  │   │
-│   └──────────────────────────────────────────────────────────────────┘   │
-│                                                                          │
-│   ┌──────────────────────────────────────────────────────────────────┐   │
-│   │                   Infrastructure Layer                           │   │
-│   │                                                                  │   │
-│   │  ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌──────────────┐ │   │
-│   │  │ Database   │ │ Cache      │ │ Task Queue │ │ File Storage │ │   │
-│   │  │ Repository │ │ (Redis)    │ │ (Celery/   │ │ (Local/S3)   │ │   │
-│   │  │ (SQLAlchemy│ │            │ │  Background│ │              │ │   │
-│   │  │  + Alembic)│ │            │ │  Tasks)    │ │              │ │   │
-│   │  └────────────┘ └────────────┘ └────────────┘ └──────────────┘ │   │
-│   │                                                                  │   │
-│   └──────────────────────────────────────────────────────────────────┘   │
-│                                                                          │
-└──────────────────────────────────────────────────────────────────────────┘
-                                  │
-                                  ▼
-┌──────────────────────────────────────────────────────────────────────────┐
-│                          DATA LAYER                                      │
-│                                                                          │
-│   ┌──────────────┐   ┌──────────────┐   ┌───────────────────────────┐   │
-│   │  PostgreSQL  │   │  Redis       │   │  File System / Object     │   │
-│   │  (Primary DB)│   │  (Cache +    │   │  Storage                  │   │
-│   │              │   │   Sessions)  │   │  (Uploads, Model Weights) │   │
-│   └──────────────┘   └──────────────┘   └───────────────────────────┘   │
-│                                                                          │
-└──────────────────────────────────────────────────────────────────────────┘
+                            ┌─────────────────┐
+                            │   Web Browser    │
+                            └────────┬────────┘
+                                     │ HTTPS
+                            ┌────────▼────────┐
+                            │  Reverse Proxy   │
+                            │  (Nginx/Caddy)   │
+                            └────────┬────────┘
+                      ┌──────────────┴──────────────┐
+                      │                             │
+              ┌───────▼───────┐            ┌────────▼────────┐
+              │   Frontend    │            │    Backend API   │
+              │   React+Vite  │            │    FastAPI       │
+              │   (Static)    │            │    (Dynamic)     │
+              └───────────────┘            └────────┬────────┘
+                                                    │
+                                    ┌───────────────┼───────────────┐
+                                    │               │               │
+                            ┌───────▼──────┐ ┌──────▼──────┐ ┌─────▼──────┐
+                            │  AI/ML       │ │  Database   │ │   Cache    │
+                            │  Pipeline    │ │  PostgreSQL │ │   Redis    │
+                            │  (Transformers)│ │            │ │            │
+                            └──────────────┘ └─────────────┘ └────────────┘
 ```
 
 ---
 
-## 3. Architectural Layers (Clean Architecture)
+## 3. Clean Architecture Layers
 
-The backend follows Clean Architecture with four concentric layers. Dependencies point **inward only** — outer layers depend on inner layers, never the reverse.
+The backend follows a strict **four-layer Clean Architecture** with an inward dependency rule: outer layers depend on inner layers, never the reverse.
 
 ```
-┌─────────────────────────────────────────────┐
-│           Frameworks & Drivers              │  ← FastAPI, SQLAlchemy, Redis
-│  ┌─────────────────────────────────────┐    │
-│  │      Interface Adapters             │    │  ← Routers, Repositories, Presenters
-│  │  ┌─────────────────────────────┐    │    │
-│  │  │    Application Layer        │    │    │  ← Use Cases, Orchestrators
-│  │  │  ┌─────────────────────┐    │    │    │
-│  │  │  │   Domain Layer      │    │    │    │  ← Entities, Value Objects, Interfaces
-│  │  │  │   (Core)            │    │    │    │
-│  │  │  └─────────────────────┘    │    │    │
-│  │  └─────────────────────────────┘    │    │
-│  └─────────────────────────────────────┘    │
-└─────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                    PRESENTATION LAYER                        │
+│  (API Routes, Request/Response DTOs, Middleware)            │
+├─────────────────────────────────────────────────────────────┤
+│                    APPLICATION LAYER                         │
+│  (Use Cases, Services, Orchestration, DTOs)                 │
+├─────────────────────────────────────────────────────────────┤
+│                      DOMAIN LAYER                            │
+│  (Entities, Value Objects, Domain Events, Interfaces)       │
+├─────────────────────────────────────────────────────────────┤
+│                   INFRASTRUCTURE LAYER                       │
+│  (Database, External APIs, ML Models, File Storage, Cache)  │
+└─────────────────────────────────────────────────────────────┘
+
+         ▲ Dependency Direction: Always Inward ▲
 ```
 
 ### 3.1 Layer Responsibilities
 
-| Layer                    | Responsibility                                                                 | Contains                                                     |
-| ------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------ |
-| **Domain (Core)**        | Business rules and entities; zero external dependencies                        | Entities, Value Objects, Domain Services, Repository Interfaces (ABCs) |
-| **Application**          | Use cases / orchestration; coordinates domain objects and external services     | Use Cases, DTOs, Application Services, Port interfaces       |
-| **Interface Adapters**   | Converts between external formats and internal representations                 | API Routers, Request/Response models, Repository implementations, Serializers |
-| **Frameworks & Drivers** | External tools and libraries                                                   | FastAPI app, SQLAlchemy engine, Redis client, Celery worker  |
+| Layer | Responsibility | May Depend On | Never Depends On |
+|---|---|---|---|
+| **Domain** | Core business entities and rules | Nothing (innermost) | Any outer layer |
+| **Application** | Use case orchestration, service interfaces | Domain | Presentation, Infrastructure |
+| **Infrastructure** | Concrete implementations (DB, ML, APIs) | Domain, Application | Presentation |
+| **Presentation** | HTTP routing, serialization, middleware | Application, Domain | Infrastructure (directly) |
 
-### 3.2 Dependency Rule
+### 3.2 Dependency Inversion
+
+Infrastructure implementations are injected into Application services via **interfaces defined in the Domain/Application layer**:
 
 ```
-Domain  ←  Application  ←  Interface Adapters  ←  Frameworks & Drivers
-  (inner)                                                (outer)
-
-• Inner layers define INTERFACES (abstract base classes / protocols).
-• Outer layers provide IMPLEMENTATIONS.
-• Dependency Injection wires implementations to interfaces at startup.
+Application Layer                Infrastructure Layer
+┌─────────────────┐              ┌─────────────────────┐
+│ AnalysisService │─depends on──▶│ IAnalysisRepository  │ ← Interface
+│                 │              │        (abstract)     │
+└─────────────────┘              └─────────┬───────────┘
+                                           │ implements
+                                 ┌─────────▼───────────┐
+                                 │ PostgresAnalysisRepo │ ← Concrete
+                                 └─────────────────────┘
 ```
 
 ---
 
-## 4. Module Decomposition
+## 4. Domain Modules
 
-The backend is decomposed into bounded modules. Each module owns its own routes, services, models, and schemas. Modules communicate only through defined service interfaces.
-
-### 4.1 Module Map
+The backend is decomposed into **bounded contexts** (domain modules). Each module owns its entities, use cases, repositories, and routes.
 
 ```
 backend/
 ├── modules/
-│   ├── auth/              # Authentication & Authorization
-│   ├── analysis/          # Core analysis orchestration
-│   ├── detection/         # Fake news detection (AI)
-│   ├── sentiment/         # Sentiment analysis (AI)
-│   ├── language/          # Language detect, translate, summarize
-│   ├── explainability/    # XAI (LIME, SHAP, attention)
-│   ├── input_processing/  # OCR, URL scraping, text cleaning
-│   ├── history/           # User analysis history
-│   ├── analytics/         # Aggregated statistics & dashboards
-│   ├── admin/             # Admin panel operations
-│   └── export/            # PDF / JSON report generation
-├── core/                  # Shared domain: config, exceptions, base models
-├── infrastructure/        # DB, cache, storage, task queue adapters
-└── main.py                # FastAPI app factory & DI wiring
+│   ├── auth/           ← Authentication & Authorization
+│   ├── analysis/       ← Core analysis orchestration
+│   ├── ai/             ← ML model inference & explainability
+│   ├── history/        ← User analysis history
+│   ├── analytics/      ← Dashboard & trend analytics
+│   └── admin/          ← Admin operations
+├── core/               ← Shared kernel (config, errors, middleware)
+└── infrastructure/     ← Cross-cutting infra (DB, cache, storage)
 ```
 
-### 4.2 Module Dependency Matrix
+### 4.1 Module Boundary Rules
 
-Arrows indicate "depends on." A module may only depend on modules to its left or on `core/`.
+1. Modules communicate **only through well-defined interfaces** (service contracts or domain events).
+2. No module may directly import another module's internal implementation.
+3. Each module exposes a **public API surface** via its `__init__.py` or a dedicated `api.py`.
+4. Shared types live in `core/` — never in a specific module.
+5. Database models are **per-module**; cross-module joins are prohibited.
+
+### 4.2 Module Dependency Graph
 
 ```
-core ← infrastructure ← input_processing ← detection
-                                          ← sentiment
-                                          ← language
-                       ← explainability   ← (detection, sentiment)
-                       ← analysis         ← (all AI modules)
-                       ← auth
-                       ← history          ← (analysis)
-                       ← analytics        ← (history)
-                       ← export           ← (analysis, history)
-                       ← admin            ← (auth, analytics)
+                    ┌──────────┐
+                    │   core   │ ◀── Every module depends on core
+                    └──────────┘
+                         ▲
+         ┌───────────────┼───────────────┐
+         │               │               │
+    ┌────┴────┐    ┌─────┴─────┐   ┌─────┴─────┐
+    │  auth   │    │ analysis  │   │ analytics │
+    └─────────┘    └─────┬─────┘   └───────────┘
+                         │
+                    ┌────┴────┐
+                    │   ai    │
+                    └────┬────┘
+                         │
+                    ┌────┴────┐
+                    │ history │
+                    └─────────┘
 ```
 
-### 4.3 Module Interface Contract
-
-Every module exposes a **Service Protocol** (Python `Protocol` class) and a **concrete implementation**. Other modules depend only on the protocol.
-
-```python
-# Example: detection module interface (conceptual, not implementation code)
-class FakeNewsDetectorProtocol(Protocol):
-    async def predict(self, text: str, language: str) -> DetectionResult: ...
-    async def predict_batch(self, texts: list[str], language: str) -> list[DetectionResult]: ...
-    def supported_languages(self) -> list[str]: ...
-```
+| Module | Depends On | Depended On By |
+|---|---|---|
+| `core` | — | All modules |
+| `auth` | `core` | `analysis`, `history`, `analytics`, `admin` |
+| `ai` | `core` | `analysis` |
+| `analysis` | `core`, `ai`, `auth` | `history`, `analytics` |
+| `history` | `core`, `auth`, `analysis` | `analytics` |
+| `analytics` | `core`, `auth`, `history` | `admin` |
+| `admin` | `core`, `auth`, `analytics` | — |
 
 ---
 
-## 5. Frontend Architecture
+## 5. Component Architecture
 
-### 5.1 SPA Structure
-
-The frontend is a React SPA built with Vite. It follows a feature-based folder structure with shared UI components.
+### 5.1 Frontend Architecture
 
 ```
 frontend/
+├── public/                     ← Static assets
 ├── src/
-│   ├── app/                  # App shell, providers, router
-│   ├── features/
-│   │   ├── auth/             # Login, Register, Forgot Password
-│   │   ├── analyze/          # Main analysis page
-│   │   ├── history/          # Analysis history
-│   │   ├── dashboard/        # Analytics dashboard
-│   │   └── admin/            # Admin panel
-│   ├── components/           # Shared UI components
-│   │   ├── ui/               # Buttons, Cards, Modals, Inputs
-│   │   ├── layout/           # Header, Sidebar, Footer
-│   │   └── charts/           # Chart wrappers
-│   ├── hooks/                # Custom React hooks
-│   ├── services/             # API client layer (axios/fetch)
-│   ├── store/                # State management (Zustand)
-│   ├── utils/                # Helpers, formatters, validators
-│   ├── types/                # TypeScript type definitions
-│   └── assets/               # Static assets (icons, images)
-├── public/
+│   ├── app/                    ← App shell, routing, providers
+│   ├── features/               ← Feature-based modules
+│   │   ├── auth/               ← Login, Register, AuthContext
+│   │   ├── analysis/           ← Analysis form, results, XAI
+│   │   ├── history/            ← Analysis history list
+│   │   ├── dashboard/          ← Analytics dashboard
+│   │   └── settings/           ← User settings
+│   ├── shared/                 ← Shared components, hooks, utils
+│   │   ├── components/         ← Button, Card, Modal, Layout
+│   │   ├── hooks/              ← useAuth, useApi, useDebounce
+│   │   ├── utils/              ← Formatters, validators
+│   │   └── types/              ← TypeScript interfaces
+│   ├── services/               ← API client layer
+│   └── styles/                 ← Global styles, design tokens
 ├── index.html
-├── vite.config.ts
-└── package.json
+└── vite.config.ts
 ```
 
-### 5.2 State Management Strategy
+**Frontend Design Principles:**
 
-| State Type         | Solution                  | Examples                                     |
-| ------------------ | ------------------------- | -------------------------------------------- |
-| **Server State**   | TanStack Query (React Query) | API responses, analysis results, history  |
-| **Client State**   | Zustand                   | Theme toggle, sidebar state, form drafts     |
-| **Form State**     | React Hook Form + Zod     | Analysis input form, login/register forms    |
-| **URL State**       | React Router v6           | Current page, query parameters, filters      |
+- **Feature-based organization** — each feature is self-contained with its own components, hooks, and types.
+- **Shared layer** — only truly reusable code lives in `shared/`.
+- **Service layer** — all API calls go through `services/`, never directly from components.
+- **No prop drilling** — use React Context or a lightweight state manager for cross-cutting state.
 
-### 5.3 Frontend-Backend Communication
+### 5.2 Backend Architecture (Per Module)
+
+Each backend module follows a consistent internal structure:
 
 ```
-React SPA  ──HTTP/REST──▶  FastAPI Backend
-                            │
-                            ├── JSON request/response
-                            ├── JWT in Authorization header
-                            ├── Multipart for file uploads
-                            └── SSE for long-running analysis progress (optional)
+modules/<module_name>/
+├── __init__.py                 ← Public API surface
+├── router.py                   ← FastAPI route definitions
+├── schemas.py                  ← Pydantic request/response models
+├── service.py                  ← Business logic / use cases
+├── models.py                   ← SQLAlchemy ORM models
+├── repository.py               ← Data access layer
+├── dependencies.py             ← FastAPI dependency injection
+├── exceptions.py               ← Module-specific exceptions
+└── tests/
+    ├── test_service.py
+    ├── test_router.py
+    └── test_repository.py
+```
+
+### 5.3 AI Pipeline Architecture
+
+```
+modules/ai/
+├── __init__.py
+├── router.py                   ← AI-specific endpoints (if any)
+├── schemas.py                  ← AI input/output schemas
+├── service.py                  ← Orchestrator: calls individual pipelines
+├── pipelines/
+│   ├── __init__.py
+│   ├── base.py                 ← Abstract pipeline interface
+│   ├── fake_news.py            ← Fake news classification pipeline
+│   ├── sentiment.py            ← Sentiment & emotion analysis
+│   ├── language_detect.py      ← Language detection
+│   ├── translation.py          ← Translation pipeline
+│   ├── summarization.py        ← Text summarization
+│   ├── ocr.py                  ← Image-to-text extraction
+│   └── explainability.py       ← LIME/SHAP/Attention XAI
+├── models/                     ← Model loading & caching
+│   ├── __init__.py
+│   ├── model_registry.py       ← Central model registry
+│   └── model_loader.py         ← Lazy loading with caching
+├── config.py                   ← Model paths, thresholds, settings
+└── tests/
+```
+
+**Pipeline Design:**
+
+Every AI pipeline implements a common interface:
+
+```
+┌─────────────────────────────────┐
+│        BasePipeline (ABC)       │
+├─────────────────────────────────┤
+│ + load_model()                  │
+│ + predict(input) → output       │
+│ + explain(input) → explanation  │
+│ + get_model_info() → metadata   │
+└─────────────────────────────────┘
+         ▲           ▲           ▲
+         │           │           │
+   FakeNewsPipeline  SentimentPipeline  ...
 ```
 
 ---
 
-## 6. Data Flow — Analysis Request
+## 6. Data Flow Architecture
 
-The core user journey: submitting content for analysis.
+### 6.1 Primary Analysis Flow
 
 ```
-┌────────┐     ┌──────────┐     ┌──────────────┐     ┌───────────────┐
-│  User  │────▶│  React   │────▶│  FastAPI      │────▶│  Analysis     │
-│        │     │  SPA     │     │  Router       │     │  Orchestrator │
-└────────┘     └──────────┘     └──────────────┘     └───────┬───────┘
-                                                             │
-                    ┌────────────────────────────────────────┤
-                    │                                        │
-                    ▼                                        ▼
-            ┌──────────────┐                      ┌──────────────────┐
-            │  Input       │                      │  Cache Check     │
-            │  Processor   │                      │  (Redis)         │
-            │  • OCR       │                      │  Hit? Return     │
-            │  • Scrape    │                      │  cached result   │
-            │  • Clean     │                      └──────────────────┘
-            └──────┬───────┘                               │ Miss
-                   │                                       │
-                   ▼                                       ▼
-            ┌──────────────┐                      ┌──────────────────┐
-            │  Language    │                      │  Parallel AI     │
-            │  Detection   │                      │  Pipeline        │
-            └──────┬───────┘                      │                  │
-                   │                              │  ┌─────────────┐ │
-                   │  detected_lang               │  │ Fake News   │ │
-                   ▼                              │  │ Detector    │ │
-            ┌──────────────┐                      │  └─────────────┘ │
-            │  Translation │ (if needed)          │  ┌─────────────┐ │
-            │  to English  │                      │  │ Sentiment   │ │
-            └──────┬───────┘                      │  │ Analyzer    │ │
-                   │                              │  └─────────────┘ │
-                   │  cleaned_text                │  ┌─────────────┐ │
-                   └─────────────────────────────▶│  │ Explainer   │ │
-                                                  │  │ (XAI)       │ │
-                                                  │  └─────────────┘ │
-                                                  └────────┬─────────┘
-                                                           │
-                                                           ▼
-                                                  ┌──────────────────┐
-                                                  │  Result          │
-                                                  │  Aggregator      │
-                                                  │  • Compose       │
-                                                  │  • Cache         │
-                                                  │  • Persist       │
-                                                  └────────┬─────────┘
-                                                           │
-                                                           ▼
-                                                  ┌──────────────────┐
-                                                  │  Response to     │
-                                                  │  Client          │
-                                                  │  (JSON)          │
-                                                  └──────────────────┘
+User Input (Text / URL / Image)
+         │
+         ▼
+┌──────────────────┐
+│ Presentation     │  POST /api/v1/analyze
+│ (Router)         │  Validate request, extract auth
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────────┐
+│ Application      │  AnalysisService.analyze()
+│ (Service)        │  Orchestrate pipeline steps
+└────────┬─────────┘
+         │
+         ├──────────────────────────────────────┐
+         │                                      │
+         ▼                                      ▼
+┌──────────────────┐                   ┌──────────────────┐
+│ Input Processing │                   │ AI Pipeline       │
+│                  │                   │                   │
+│ • URL Scraping   │                   │ 1. Language Detect│
+│ • OCR Extraction │──────────────────▶│ 2. Translation    │
+│ • Text Cleaning  │  cleaned text     │ 3. Fake News Det. │
+└──────────────────┘                   │ 4. Sentiment Anal.│
+                                       │ 5. Summarization  │
+                                       │ 6. Explainability │
+                                       └────────┬─────────┘
+                                                │
+                                                ▼
+                                       ┌──────────────────┐
+                                       │ Result Assembly   │
+                                       │                   │
+                                       │ • Aggregate       │
+                                       │ • Format response │
+                                       │ • Store in DB     │
+                                       │ • Return to user  │
+                                       └──────────────────┘
 ```
 
-### 6.1 Data Flow Steps
+### 6.2 Analysis Pipeline Sequence
 
-| Step | Action                          | Module               | Notes                                           |
-| ---- | ------------------------------- | -------------------- | ------------------------------------------------ |
-| 1    | User submits text / URL / image | Frontend             | Form validation via Zod                          |
-| 2    | POST `/api/v1/analyze`          | API Router           | JWT-authenticated                                |
-| 3    | Input processing                | `input_processing`   | OCR → text, URL → scrape → text, text → clean   |
-| 4    | Language detection              | `language`           | Auto-detect language; store original + detected  |
-| 5    | Cache check                     | `infrastructure`     | Hash input text; check Redis                     |
-| 6    | Parallel AI inference           | `detection`, `sentiment`, `explainability` | Run concurrently via `asyncio.gather` |
-| 7    | Result aggregation              | `analysis`           | Compose unified `AnalysisResult`                 |
-| 8    | Cache write + DB persist        | `infrastructure`, `history` | Store for history and caching            |
-| 9    | Return response                 | API Router           | JSON with scores, explanation, metadata          |
+```
+┌──────┐  ┌────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
+│Input │─▶│Language │─▶│Translate │─▶│FakeNews  │─▶│Sentiment │─▶│Summarize │
+│Parse │  │Detect  │  │(if needed)│  │Classify  │  │Analyze   │  │          │
+└──────┘  └────────┘  └──────────┘  └──────────┘  └──────────┘  └──────────┘
+                                         │               │
+                                         ▼               ▼
+                                    ┌──────────┐   ┌──────────┐
+                                    │XAI       │   │XAI       │
+                                    │Explain   │   │Explain   │
+                                    └──────────┘   └──────────┘
+```
+
+**Pipeline execution is sequential** within a single request. Each step produces a typed output that feeds the next step. The orchestrator (`AnalysisService`) manages the pipeline graph and handles partial failures gracefully.
+
+### 6.3 Authentication Flow
+
+```
+┌────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐
+│ Client │────▶│ /auth/   │────▶│ Auth     │────▶│ Database │
+│        │     │ login    │     │ Service  │     │ (users)  │
+│        │◀────│          │◀────│          │◀────│          │
+│        │ JWT │          │token│          │user │          │
+└────────┘     └──────────┘     └──────────┘     └──────────┘
+
+Subsequent Requests:
+┌────────┐     ┌──────────┐     ┌──────────┐
+│ Client │────▶│ Auth     │────▶│ Protected│
+│        │     │ Middleware│     │ Route    │
+│ Bearer │     │ (JWT     │     │          │
+│ Token  │     │  verify) │     │          │
+└────────┘     └──────────┘     └──────────┘
+```
 
 ---
 
-## 7. Authentication & Authorization Architecture
+## 7. Infrastructure Architecture
 
-### 7.1 Auth Flow
+### 7.1 Development Environment
 
 ```
-┌────────┐                    ┌──────────┐                    ┌──────────┐
-│ Client │───── POST ────────▶│ /auth/   │───── Validate ───▶│ User DB  │
-│        │      /login        │ login    │      credentials   │          │
-│        │◀──── JWT ──────────│          │◀──── User row ─────│          │
-│        │      (access +     └──────────┘                    └──────────┘
-│        │       refresh)
-│        │
-│        │───── GET ─────────▶ /api/v1/* ───── Verify JWT ──▶ Proceed
-│        │      Authorization:                    │
-│        │      Bearer <token>                    ▼
-│        │                                   Token expired?
-│        │                                   401 Unauthorized
-│        │
-│        │───── POST ────────▶ /auth/refresh ──▶ Issue new access token
-│        │      refresh_token
-└────────┘
+┌──────────────────────────────────────────────────┐
+│                  Developer Machine                │
+│                                                   │
+│  ┌───────────┐  ┌───────────┐  ┌──────────────┐ │
+│  │ Frontend  │  │ Backend   │  │ PostgreSQL   │ │
+│  │ Vite Dev  │  │ Uvicorn   │  │ (Docker)     │ │
+│  │ :5173     │  │ :8000     │  │ :5432        │ │
+│  └───────────┘  └───────────┘  └──────────────┘ │
+│                                                   │
+│  ┌───────────┐  ┌───────────────────────────────┐ │
+│  │ Redis     │  │ HuggingFace Models            │ │
+│  │ (Docker)  │  │ (cached in ~/.cache/hf/)      │ │
+│  │ :6379     │  │                               │ │
+│  └───────────┘  └───────────────────────────────┘ │
+└──────────────────────────────────────────────────┘
 ```
 
-### 7.2 Role-Based Access Control (RBAC)
+### 7.2 Production Environment
 
-| Role       | Permissions                                                              |
-| ---------- | ------------------------------------------------------------------------ |
-| `guest`    | Public health-check endpoint only                                        |
-| `user`     | Analyze, view own history, export own results, manage own profile        |
-| `admin`    | All user permissions + view all users, view system analytics, manage users |
-
-### 7.3 Token Strategy
-
-| Token          | Lifetime | Storage             | Purpose                    |
-| -------------- | -------- | ------------------- | -------------------------- |
-| Access Token   | 15 min   | Memory (JS variable)| API authentication         |
-| Refresh Token  | 7 days   | HttpOnly cookie     | Silent access token renewal|
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Cloud Provider (Render / Railway)          │
+│                                                              │
+│  ┌─────────────┐   ┌─────────────┐   ┌─────────────────┐   │
+│  │ Static CDN  │   │ API Server  │   │ Managed Postgres │   │
+│  │ (Frontend)  │   │ (FastAPI)   │   │                  │   │
+│  └─────────────┘   └──────┬──────┘   └─────────────────┘   │
+│                           │                                  │
+│                    ┌──────▼──────┐                           │
+│                    │ Redis       │                           │
+│                    │ (Managed)   │                           │
+│                    └─────────────┘                           │
+│                                                              │
+│  External:                                                   │
+│  ┌──────────────────────┐                                   │
+│  │ HuggingFace Inference│                                   │
+│  │ API (free tier)      │                                   │
+│  └──────────────────────┘                                   │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ---
 
-## 8. Caching Strategy
+## 8. API Architecture
 
-### 8.1 Cache Layers
+### 8.1 REST API Design
 
-| Layer              | Tool   | TTL        | What Is Cached                                      |
-| ------------------ | ------ | ---------- | --------------------------------------------------- |
-| **Result Cache**   | Redis  | 24 hours   | Full analysis results keyed by `hash(input_text)`   |
-| **Model Cache**    | Memory | App lifetime | Loaded model objects (singleton per process)       |
-| **Session Cache**  | Redis  | 7 days     | Refresh token blacklist                              |
-| **HTTP Cache**     | Nginx  | Varies     | Static frontend assets (immutable hashing)           |
+All endpoints follow a consistent structure:
 
-### 8.2 Cache Invalidation
+```
+Base URL:  /api/v1
 
-- **Result cache**: Time-based expiry (TTL). No manual invalidation needed — analysis results are immutable for a given input.
-- **Model cache**: Invalidated on application restart or model version bump.
-- **Session cache**: Invalidated on logout (refresh token added to blacklist).
+Versioning: URL-based (/api/v1/, /api/v2/)
+Format:     JSON (application/json)
+Auth:       Bearer token (JWT) in Authorization header
+```
 
----
+### 8.2 Endpoint Namespace Map
 
-## 9. Error Handling Architecture
+| Namespace | Module | Description |
+|---|---|---|
+| `/api/v1/auth/*` | auth | Registration, login, token refresh, profile |
+| `/api/v1/analyze` | analysis | Submit text/URL/image for analysis |
+| `/api/v1/history/*` | history | Retrieve past analyses |
+| `/api/v1/analytics/*` | analytics | Dashboard data and trend queries |
+| `/api/v1/admin/*` | admin | User management, system health |
+| `/api/v1/health` | core | Health check and readiness probe |
 
-### 9.1 Error Response Format
+### 8.3 Standard Response Envelope
 
-All API errors follow a consistent JSON structure:
+Every API response follows a consistent envelope:
 
 ```json
 {
-  "error": {
-    "code": "ANALYSIS_FAILED",
-    "message": "The AI model could not process the input text.",
-    "details": {
-      "reason": "Input text is too short (minimum 20 characters).",
-      "input_length": 12
-    },
-    "request_id": "req_abc123",
-    "timestamp": "2026-08-13T12:00:00Z"
+  "success": true,
+  "data": { },
+  "error": null,
+  "meta": {
+    "request_id": "uuid",
+    "timestamp": "ISO-8601",
+    "version": "1.0.0"
   }
 }
 ```
 
-### 9.2 Error Categories
+Error responses:
 
-| HTTP Status | Error Code Prefix | Example                              |
-| ----------- | ------------------ | ------------------------------------ |
-| 400         | `VALIDATION_*`     | `VALIDATION_TEXT_TOO_SHORT`          |
-| 401         | `AUTH_*`           | `AUTH_TOKEN_EXPIRED`                 |
-| 403         | `FORBIDDEN_*`      | `FORBIDDEN_ADMIN_ONLY`              |
-| 404         | `NOT_FOUND_*`      | `NOT_FOUND_ANALYSIS`               |
-| 422         | `PROCESSING_*`     | `PROCESSING_OCR_FAILED`            |
-| 429         | `RATE_LIMIT_*`     | `RATE_LIMIT_EXCEEDED`              |
-| 500         | `INTERNAL_*`       | `INTERNAL_MODEL_LOAD_FAILED`       |
-
-### 9.3 Global Exception Handler
-
-FastAPI middleware catches all exceptions and maps them to the standard error format. Unhandled exceptions return a 500 with a generic message (details logged server-side only — never leaked to clients).
-
----
-
-## 10. Observability
-
-### 10.1 Logging
-
-| Aspect          | Choice                                                               |
-| --------------- | -------------------------------------------------------------------- |
-| **Library**     | Python `structlog` (structured JSON logging)                         |
-| **Format**      | JSON lines — machine-parseable, human-readable with `rich` in dev   |
-| **Levels**      | DEBUG (dev), INFO (prod), WARNING, ERROR, CRITICAL                  |
-| **Correlation** | Every request gets a `request_id` propagated through all log entries |
-
-### 10.2 Monitoring & Health
-
-| Endpoint              | Purpose                                                          |
-| --------------------- | ---------------------------------------------------------------- |
-| `GET /health`         | Shallow health check (API is running)                            |
-| `GET /health/ready`   | Deep health check (DB connected, Redis reachable, models loaded) |
-| `GET /metrics`        | Prometheus-compatible metrics (optional, stretch)                |
-
-### 10.3 Key Metrics to Track
-
-- Request count and latency (p50, p95, p99) per endpoint
-- AI inference latency per model
-- Cache hit/miss ratio
-- Error rate by category
-- Active users (daily / weekly)
-- Analysis count by language
-
----
-
-## 11. Security Architecture
-
-> Full details in `15_SECURITY_PLAN.md`.
-
-### 11.1 Security Layers
-
-```
-Client ──▶ HTTPS (TLS 1.3) ──▶ Nginx ──▶ Rate Limiter ──▶ CORS ──▶ JWT Auth ──▶ RBAC ──▶ Input Validation ──▶ Handler
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Human-readable message",
+    "details": [ ]
+  },
+  "meta": { }
+}
 ```
 
-### 11.2 Key Security Controls
-
-| Control                    | Implementation                                       |
-| -------------------------- | ---------------------------------------------------- |
-| Transport encryption       | TLS 1.3 via Nginx / cloud provider                  |
-| Authentication             | JWT (RS256 or HS256)                                 |
-| Authorization              | RBAC middleware on protected routes                  |
-| Input validation           | Pydantic models with strict constraints              |
-| SQL injection prevention   | SQLAlchemy ORM (parameterized queries only)          |
-| XSS prevention             | React's built-in escaping + CSP headers              |
-| CSRF prevention            | SameSite cookies + CORS whitelist                    |
-| Rate limiting              | Token bucket per user (Redis-backed)                 |
-| Dependency scanning        | `pip-audit` + `npm audit` in CI                      |
-| Secrets management         | Environment variables; never committed to git        |
-
 ---
 
-## 12. Deployment Architecture
+## 9. Cross-Cutting Concerns
 
-### 12.1 Container Topology (Docker Compose)
+### 9.1 Middleware Stack
 
 ```
-┌──────────────────────────────────────────────────────┐
-│                  Docker Compose                       │
-│                                                      │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐           │
-│  │  nginx   │  │  backend │  │ frontend │           │
-│  │  :80/443 │  │  :8000   │  │  (build) │           │
-│  │  Proxy   │──│  FastAPI  │  │  Vite    │           │
-│  └──────────┘  └──────────┘  └──────────┘           │
-│                      │                               │
-│  ┌──────────┐  ┌─────┴────┐  ┌──────────┐           │
-│  │  redis   │  │  postgres │  │  worker  │           │
-│  │  :6379   │  │  :5432    │  │  (Celery/│           │
-│  │          │  │           │  │  BGTasks)│           │
-│  └──────────┘  └──────────┘  └──────────┘           │
-│                                                      │
-└──────────────────────────────────────────────────────┘
+Request
+  │
+  ▼
+┌──────────────────┐
+│ CORS Middleware   │  ← Allow frontend origin
+├──────────────────┤
+│ Request ID       │  ← Generate unique request ID
+├──────────────────┤
+│ Logging          │  ← Structured request/response logging
+├──────────────────┤
+│ Rate Limiter     │  ← Per-user and per-IP throttling
+├──────────────────┤
+│ Auth Middleware   │  ← JWT validation (optional per route)
+├──────────────────┤
+│ Error Handler    │  ← Global exception → standard error response
+├──────────────────┤
+│ Route Handler    │  ← Actual endpoint logic
+└──────────────────┘
 ```
 
-### 12.2 Environment Matrix
+### 9.2 Error Handling Strategy
 
-| Environment  | Purpose                  | Database        | AI Models        | Deployment       |
-| ------------ | ------------------------ | --------------- | ---------------- | ---------------- |
-| **Local**    | Development              | SQLite / Postgres | CPU (dev weights) | `docker-compose up` |
-| **CI**       | Automated testing        | SQLite (in-memory) | Mock / tiny model | GitHub Actions  |
-| **Staging**  | Pre-production demo      | Postgres (free tier) | Quantized (CPU) | Render / Railway |
-| **Production** | Final demo / evaluation | Postgres (free tier) | Quantized (CPU) | Render / Railway |
+| Layer | Strategy |
+|---|---|
+| **Domain** | Raise domain-specific exceptions (e.g., `AnalysisNotFoundError`) |
+| **Application** | Catch domain exceptions, wrap in application errors |
+| **Presentation** | Global exception handler maps all errors to HTTP status codes |
+| **AI Pipeline** | Errors in individual pipelines produce partial results, never crash the request |
 
----
+### 9.3 Caching Strategy
 
-## 13. Cross-Cutting Concerns
+| Data | Cache Location | TTL | Invalidation |
+|---|---|---|---|
+| JWT blocklist | Redis | Token expiry | On logout |
+| Model inference results | Redis | 1 hour | On model update |
+| User session data | Redis | 30 minutes | On logout / expiry |
+| Static model metadata | In-memory | App lifetime | On restart |
+| HuggingFace models | Filesystem | Indefinite | Manual update |
 
-| Concern             | Strategy                                                           |
-| ------------------- | ------------------------------------------------------------------ |
-| **Configuration**   | Pydantic `BaseSettings` loading from `.env`; 12-factor app         |
-| **Dependency Injection** | Manual DI via app factory; `Depends()` in FastAPI              |
-| **Serialization**   | Pydantic V2 models for all request/response schemas                |
-| **Pagination**      | Cursor-based for large lists; offset-based for simple queries      |
-| **Versioning**      | URL-prefix versioning (`/api/v1/`); additive changes only in v1   |
-| **CORS**            | Whitelist frontend origin only; credentials allowed                |
-| **Idempotency**     | Analysis requests are naturally idempotent (same input → same result) |
-| **Graceful Shutdown**| Signal handlers to finish in-flight requests; model cleanup        |
+### 9.4 Logging & Observability
 
----
+```
+┌──────────────┐     ┌──────────────────┐     ┌───────────────┐
+│ Application  │────▶│ Structured Logger│────▶│ stdout / file │
+│ (any layer)  │     │ (JSON format)    │     │ (collected by │
+└──────────────┘     └──────────────────┘     │  platform)    │
+                                               └───────────────┘
 
-## 14. Scalability Considerations
-
-Although v1 targets a single-host deployment, the architecture supports horizontal scaling:
-
-| Bottleneck          | Scaling Strategy                                                       |
-| ------------------- | ---------------------------------------------------------------------- |
-| AI inference         | Extract into a separate model-serving container; add replicas          |
-| Database             | Read replicas; connection pooling (PgBouncer)                          |
-| Cache                | Redis Cluster (not needed for v1)                                      |
-| API                  | Stateless backend; add replicas behind load balancer                   |
-| File storage         | Swap local filesystem for S3-compatible object storage                 |
-
----
-
-## 15. Architecture Decision Records (Summary)
-
-> Full ADRs in `10_TECHNICAL_DECISIONS.md`.
-
-| ADR # | Decision                               | Rationale                                                      |
-| ----- | --------------------------------------- | -------------------------------------------------------------- |
-| ADR-1 | Modular Monolith over Microservices     | Solo dev; reduce operational complexity; extract later if needed|
-| ADR-2 | FastAPI over Django                     | Async-native; lighter; better for AI workloads; auto OpenAPI   |
-| ADR-3 | React + Vite over Next.js              | No SSR needed; faster dev server; simpler deployment           |
-| ADR-4 | PostgreSQL over MongoDB                 | Structured data; relational queries for analytics; ACID        |
-| ADR-5 | Clean Architecture over MVC            | Testability; dependency inversion; framework independence      |
-| ADR-6 | In-process AI over separate model server | Simplicity for v1; gRPC extraction path preserved            |
+Log Fields:
+  - timestamp (ISO-8601)
+  - level (DEBUG | INFO | WARNING | ERROR | CRITICAL)
+  - request_id
+  - module
+  - message
+  - extra (context-specific data)
+```
 
 ---
 
-## 16. Document Cross-References
+## 10. Security Architecture
 
-| Document                     | Relationship                                        |
-| ---------------------------- | --------------------------------------------------- |
-| `00_PROJECT_VISION.md`       | Vision this architecture serves                     |
-| `02_TECH_STACK.md`           | Specific technology choices                         |
-| `04_DATABASE_DESIGN.md`      | Schema design for the data layer                    |
-| `05_API_SPECIFICATION.md`    | Detailed endpoint contracts                         |
-| `06_AI_PIPELINE.md`          | AI engine layer details                             |
-| `13_DEPLOYMENT_PLAN.md`      | Deployment procedures and runbooks                  |
-| `17_FOLDER_STRUCTURE.md`     | Detailed file/folder layout                         |
+> *Detailed in `15_SECURITY_PLAN.md`*
+
+### 10.1 Security Layers
+
+```
+┌─────────────────────────────────────────┐
+│           Transport Security             │
+│           (HTTPS / TLS)                  │
+├─────────────────────────────────────────┤
+│           Rate Limiting                  │
+│           (per-IP, per-user)             │
+├─────────────────────────────────────────┤
+│           Authentication                 │
+│           (JWT + Bcrypt)                 │
+├─────────────────────────────────────────┤
+│           Authorization                  │
+│           (Role-based: user / admin)     │
+├─────────────────────────────────────────┤
+│           Input Validation               │
+│           (Pydantic schemas)             │
+├─────────────────────────────────────────┤
+│           Output Sanitization            │
+│           (No raw tracebacks in prod)    │
+└─────────────────────────────────────────┘
+```
+
+### 10.2 Authentication Design
+
+- **Method:** JWT (JSON Web Tokens) with short-lived access tokens (15 min) and long-lived refresh tokens (7 days)
+- **Password Storage:** Bcrypt with salt rounds ≥ 12
+- **Token Storage:** Access token in memory (frontend), refresh token in httpOnly cookie
+- **Optional:** OAuth 2.0 via Google (future phase)
 
 ---
 
-## 17. Approval
+## 11. Scalability Considerations
 
-| Role                | Name   | Date       | Status   |
-| ------------------- | ------ | ---------- | -------- |
-| Architect / Lead    | Vikas  | 2026-08-13 | ✅ Draft  |
-| Academic Supervisor |        |            | Pending  |
+While v1.0 is a modular monolith, the architecture supports future scaling:
+
+| Concern | Current (v1.0) | Future Path |
+|---|---|---|
+| **Compute** | Single process, CPU inference | Separate AI worker process, GPU inference |
+| **Database** | Single PostgreSQL instance | Read replicas, connection pooling |
+| **Cache** | Single Redis instance | Redis Cluster |
+| **AI Models** | In-process loading | Dedicated model serving (TorchServe, Triton) |
+| **Frontend** | CDN-served static build | Edge deployment (Vercel/Cloudflare) |
+| **API** | Single FastAPI instance | Multiple instances behind load balancer |
+| **Module Extraction** | In-process modules | Independent services with message bus |
+
+### 11.1 Module Extraction Path
+
+When a module needs to become an independent service:
+
+```
+Step 1: Module already has clean interfaces → No code change needed
+Step 2: Replace in-process calls with HTTP/gRPC client
+Step 3: Deploy module as separate service
+Step 4: Add service discovery and circuit breakers
+```
 
 ---
 
-*This document defines the structural blueprint of VeritasAI. All implementation decisions must align with the architecture described here.*
+## 12. Technology Boundaries
+
+> *Detailed in `02_TECH_STACK.md`*
+
+| Boundary | Technology |
+|---|---|
+| Frontend Framework | React 18+ with Vite |
+| Backend Framework | FastAPI (Python 3.11+) |
+| ORM | SQLAlchemy 2.0 (async) |
+| Database | PostgreSQL 15+ |
+| Cache | Redis 7+ |
+| ML Runtime | HuggingFace Transformers + PyTorch |
+| Auth | python-jose (JWT) + passlib (bcrypt) |
+| API Documentation | Auto-generated OpenAPI (Swagger) |
+| Containerization | Docker + Docker Compose |
+
+---
+
+## 13. Architecture Decision Records (Preview)
+
+> *Full log in `10_TECHNICAL_DECISIONS.md`*
+
+| ADR # | Decision | Status |
+|---|---|---|
+| ADR-001 | Modular Monolith over Microservices | ✅ Accepted |
+| ADR-002 | FastAPI over Django/Flask | ✅ Accepted |
+| ADR-003 | PostgreSQL over MongoDB | ✅ Accepted |
+| ADR-004 | Feature-based frontend structure | ✅ Accepted |
+| ADR-005 | HuggingFace Inference API as GPU fallback | ✅ Accepted |
+
+---
+
+## 14. Diagram Legend
+
+| Symbol | Meaning |
+|---|---|
+| `──▶` | Data flow / dependency direction |
+| `◀──` | Response / return path |
+| `───` | Bidirectional communication |
+| `┌─┐` | Component / service boundary |
+| `▲` | Dependency points inward (Clean Architecture) |
+
+---
+
+*Document Version: 1.0.0*
+*Created: 2026-08-05*
+*Author: Vikas (Principal Architect)*
+*Status: DRAFT — Awaiting Approval*
+*Depends On: 00_PROJECT_VISION.md (Approved)*

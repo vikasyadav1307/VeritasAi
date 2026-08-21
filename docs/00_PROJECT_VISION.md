@@ -1,298 +1,272 @@
 # 00 — Project Vision
 
 > **Multilingual Fake News Detection and Sentiment Analysis using Transformer-Based NLP**
-
-| Field              | Value                                                              |
-| ------------------ | ------------------------------------------------------------------ |
-| **Document ID**    | DOC-00                                                             |
-| **Version**        | 1.0.0                                                              |
-| **Status**         | Draft                                                              |
-| **Author**         | Vikas (Lead / Architect)                                           |
-| **Created**        | 2026-08-13                                                         |
-| **Last Updated**   | 2026-08-13                                                         |
-| **Classification** | Internal — Final Year Project                                      |
+>
+> *Codename: **VerifAI***
 
 ---
 
 ## 1. Executive Summary
 
-Misinformation spreads faster than factual reporting. Social media platforms, messaging apps, and news aggregators amplify unverified claims in dozens of languages — yet the vast majority of detection tools only work in English. This project closes that gap.
+VerifAI is an AI-powered SaaS platform that empowers journalists, researchers, content moderators, and everyday users to **detect misinformation across languages**, understand **sentiment manipulation**, and receive **transparent, explainable verdicts** — all through an intuitive web interface.
 
-**VeritasAI** is an AI-powered web application that detects fake news across multiple languages, performs sentiment analysis on the content, and explains *why* a piece of text was flagged — all through a clean, production-grade SaaS interface.
-
-The system combines state-of-the-art transformer models (multilingual BERT, XLM-RoBERTa), explainable AI (LIME / SHAP), and a modular monolith backend designed to evolve into microservices. It is built to be a real product, not a classroom demo.
+The platform combines state-of-the-art transformer-based NLP models with a modular, production-grade architecture designed for scalability, extensibility, and real-world deployment.
 
 ---
 
 ## 2. Problem Statement
 
-### 2.1 The Core Problem
+### 2.1 The Misinformation Crisis
 
-Fake news and misinformation cause real-world harm — from health scares to political manipulation. Existing detection tools suffer from three critical limitations:
+| Dimension | Impact |
+|---|---|
+| **Scale** | Over 3.5 billion social media users are exposed to misinformation daily |
+| **Speed** | False news spreads 6× faster than factual news (MIT, 2018) |
+| **Language Barrier** | 95%+ of existing detection tools are English-only |
+| **Opacity** | Most AI classifiers provide a binary label with zero explanation |
+| **Accessibility** | No unified platform combines detection, sentiment, translation, and explainability |
 
-| Limitation                    | Impact                                                                 |
-| ----------------------------- | ---------------------------------------------------------------------- |
-| **English-only models**       | 75 %+ of internet users speak a non-English primary language.          |
-| **Black-box predictions**     | Users see "Fake" / "Real" with no reasoning — eroding trust in the tool itself. |
-| **Single-input only**         | Most tools accept only plain text; they cannot process images, URLs, or documents. |
+### 2.2 Gaps in Existing Solutions
 
-### 2.2 Who Is Affected
-
-- **Journalists and fact-checkers** who need rapid multilingual verification.
-- **Social media consumers** who encounter unverified claims daily.
-- **Researchers** studying misinformation trends across languages and regions.
-- **Organizations** that need to monitor media sentiment about their brand.
+1. **Monolingual Bias** — Tools like ClaimBuster, FakeCatcher, and Google Fact Check API are overwhelmingly English-centric.
+2. **Black-Box Models** — Users receive "Fake" / "Real" labels without understanding *why*.
+3. **Fragmented Workflow** — Detection, sentiment analysis, translation, and summarization require separate tools.
+4. **No OCR Pipeline** — Misinformation in image-based text (screenshots, memes) is ignored.
+5. **No Analytics Layer** — Organizations lack dashboards to track misinformation trends over time.
 
 ---
 
 ## 3. Vision Statement
 
-> Build an intelligent, multilingual, and explainable fake-news detection platform that any user — regardless of language — can trust to verify information and understand the reasoning behind every verdict.
+> **To build the most accessible, transparent, and multilingual fake news detection platform — one that explains its reasoning, supports diverse media inputs, and scales from a student project to a production SaaS product.**
 
 ---
 
 ## 4. Mission
 
-1. **Detect** fake news in **5+ languages** (English, Hindi, Spanish, French, Arabic — extensible).
-2. **Explain** every prediction with human-readable reasoning (Explainable AI).
-3. **Analyze sentiment** of news content (positive, negative, neutral) alongside credibility.
-4. **Accept multiple input types**: raw text, image (OCR), URL, and document upload.
-5. **Provide analytics** — historical dashboards, trend lines, and aggregate statistics.
-6. **Ship as a real product** — authentication, rate limiting, responsive UI, CI/CD, and monitoring.
+Deliver a modular AI platform that:
+
+- Detects fake news across **10+ languages** using transformer models
+- Performs **sentiment and emotion analysis** to expose manipulation tactics
+- Provides **Explainable AI (XAI)** results with attention heatmaps and LIME/SHAP explanations
+- Supports **text, URL, and image (OCR)** inputs
+- Offers **translation and summarization** for cross-lingual accessibility
+- Includes **user authentication, history, and analytics dashboards**
+- Is built with **Clean Architecture** principles and is deployment-ready from Day 1
 
 ---
 
-## 5. Project Objectives
+## 5. Target Users
 
-### 5.1 Primary Objectives
-
-| # | Objective                                              | Success Metric                                                  |
-|---|--------------------------------------------------------|-----------------------------------------------------------------|
-| O1 | Multilingual fake news classification                 | ≥ 85 % F1-score on test sets for each supported language        |
-| O2 | Sentiment analysis on news content                    | ≥ 80 % accuracy on benchmark datasets                          |
-| O3 | Explainable AI output                                 | Every prediction includes top-5 contributing features / phrases |
-| O4 | Multi-modal input (text, image, URL)                  | All four input channels functional end-to-end                   |
-| O5 | Production-grade web application                      | Auth, rate limiting, error handling, monitoring live             |
-| O6 | Deployment to cloud                                   | Fully containerized; deployable with a single command           |
-
-### 5.2 Secondary Objectives (Stretch Goals)
-
-| # | Objective                                              | Success Metric                                    |
-|---|--------------------------------------------------------|---------------------------------------------------|
-| S1 | Real-time news feed monitoring                        | WebSocket-based live analysis dashboard           |
-| S2 | Browser extension                                     | Chrome extension for in-page analysis             |
-| S3 | Comparative model benchmarking dashboard              | Side-by-side model performance visualization      |
-| S4 | Community-driven fact-check submissions               | User-submitted claims with voting and moderation  |
+| Persona | Description | Primary Need |
+|---|---|---|
+| **Journalist** | Fact-checker at a news organization | Verify claims quickly across languages |
+| **Researcher** | Academic studying misinformation | Analyze trends, export data, understand model behavior |
+| **Content Moderator** | Platform trust & safety team member | Bulk-analyze flagged content with explainability |
+| **Student / Educator** | University student or professor | Learn about NLP, fake news, and AI transparency |
+| **General Public** | Everyday internet user | Check if a news article or WhatsApp forward is real |
 
 ---
 
-## 6. Key Features
+## 6. Core Features
 
 ### 6.1 Feature Map
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                        VeritasAI                            │
-├──────────────┬──────────────┬───────────────┬───────────────┤
-│  Detection   │  Analysis    │  Input Layer  │  Platform     │
-├──────────────┼──────────────┼───────────────┼───────────────┤
-│ Fake News    │ Sentiment    │ Text Input    │ Auth (JWT)    │
-│ Classification│ Analysis    │ URL Scraping  │ User Dashboard│
-│ Credibility  │ Emotion      │ Image OCR     │ Admin Panel   │
-│   Score      │  Detection   │ Doc Upload    │ Analytics     │
-│ Source       │ Keyword      │ Paste / Drag  │ Rate Limiting │
-│  Verification│  Extraction  │               │ API Keys      │
-├──────────────┼──────────────┼───────────────┼───────────────┤
-│  AI / XAI    │ Language     │ Output        │ DevOps        │
-├──────────────┼──────────────┼───────────────┼───────────────┤
-│ LIME / SHAP  │ Auto-Detect  │ PDF Report    │ Docker        │
-│ Attention    │ Translation  │ JSON Export   │ CI/CD         │
-│  Heatmaps   │ Summarization│ Share Link    │ Monitoring    │
-│ Confidence   │ 5+ Languages │ History       │ Logging       │
-│  Intervals   │              │               │               │
-└──────────────┴──────────────┴───────────────┴───────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                        VerifAI Platform                         │
+├──────────────────┬──────────────────┬───────────────────────────┤
+│   INPUT LAYER    │  PROCESSING CORE │       OUTPUT LAYER        │
+├──────────────────┼──────────────────┼───────────────────────────┤
+│ • Text Input     │ • Fake News      │ • Verdict + Confidence    │
+│ • URL Scraping   │   Classification │ • Sentiment Breakdown     │
+│ • Image OCR      │ • Sentiment &    │ • XAI Explanations        │
+│ • File Upload    │   Emotion Anal.  │   (LIME / SHAP / Attn)    │
+│                  │ • Language Detect │ • Translation             │
+│                  │ • Translation    │ • Summary                 │
+│                  │ • Summarization  │ • Analytics Dashboard     │
+│                  │ • Explainability │ • History & Export         │
+└──────────────────┴──────────────────┴───────────────────────────┘
 ```
 
-### 6.2 Feature Prioritization (MoSCoW)
+### 6.2 Feature Breakdown
 
-| Priority        | Features                                                                                                |
-| --------------- | ------------------------------------------------------------------------------------------------------- |
-| **Must Have**   | Fake news detection, sentiment analysis, multilingual support, explainable AI, text + URL input, auth, history, basic analytics |
-| **Should Have** | Image OCR input, translation, summarization, PDF report export, admin panel, rate limiting               |
-| **Could Have**  | Browser extension, real-time feed monitoring, emotion detection, comparative benchmarking                |
-| **Won't Have (v1)** | Mobile native app, video analysis, real-time social media stream ingestion                          |
-
----
-
-## 7. Target Users
-
-### 7.1 User Personas
-
-#### Persona 1 — The Student Fact-Checker (Primary)
-
-| Attribute     | Detail                                                     |
-| ------------- | ---------------------------------------------------------- |
-| Name          | Priya                                                      |
-| Age           | 21                                                         |
-| Role          | University student, media studies                          |
-| Goal          | Quickly verify WhatsApp forwards in Hindi and English      |
-| Pain Point    | No free tool handles Hindi; existing tools give no explanation |
-| Usage         | 5–10 checks per day, mobile-first                          |
-
-#### Persona 2 — The Journalist (Secondary)
-
-| Attribute     | Detail                                                     |
-| ------------- | ---------------------------------------------------------- |
-| Name          | Carlos                                                     |
-| Age           | 34                                                         |
-| Role          | Freelance journalist covering Latin America                |
-| Goal          | Verify sources and claims in Spanish and English at speed  |
-| Pain Point    | Needs batch URL analysis and exportable reports            |
-| Usage         | 20–50 checks per day, desktop                              |
-
-#### Persona 3 — The Researcher (Tertiary)
-
-| Attribute     | Detail                                                     |
-| ------------- | ---------------------------------------------------------- |
-| Name          | Dr. Amira                                                  |
-| Age           | 42                                                         |
-| Role          | NLP researcher studying Arabic misinformation              |
-| Goal          | Access historical analysis data and model performance stats|
-| Pain Point    | Needs API access, raw confidence scores, and XAI outputs   |
-| Usage         | API-driven, batch processing                               |
+| # | Feature | Description | Priority |
+|---|---|---|---|
+| F-01 | **Fake News Detection** | Classify text as Real / Fake / Uncertain with confidence score | Critical |
+| F-02 | **Multilingual Support** | Support 10+ languages via multilingual transformers (XLM-R, mBERT) | Critical |
+| F-03 | **Sentiment Analysis** | Detect sentiment (positive, negative, neutral) and emotions (anger, fear, joy, etc.) | Critical |
+| F-04 | **Explainable AI** | Provide LIME/SHAP explanations, attention heatmaps, and reasoning traces | High |
+| F-05 | **URL Analysis** | Scrape article content from URL, extract metadata, and analyze | High |
+| F-06 | **OCR Support** | Extract text from images (screenshots, memes) for analysis | High |
+| F-07 | **Translation** | Translate input/output across supported languages | High |
+| F-08 | **Summarization** | Generate concise summaries of long articles | Medium |
+| F-09 | **Authentication** | User registration, login, JWT-based sessions, OAuth | High |
+| F-10 | **Analysis History** | Store and retrieve past analyses per user | Medium |
+| F-11 | **Analytics Dashboard** | Visualize trends, language distribution, sentiment patterns | Medium |
+| F-12 | **Export & Reporting** | Export results as PDF / CSV / JSON | Low |
+| F-13 | **Rate Limiting & Abuse Prevention** | Protect public APIs from misuse | High |
+| F-14 | **Admin Panel** | Manage users, view system health, moderate content | Low |
 
 ---
 
-## 8. Scope Boundaries
+## 7. Non-Functional Requirements
 
-### 8.1 In Scope (Version 1.0)
-
-- Web application (responsive SPA)
-- REST API with OpenAPI documentation
-- Multilingual fake news classification (5 languages)
-- Sentiment analysis (3-class: positive, negative, neutral)
-- Explainable AI (LIME + attention visualization)
-- Input: text, URL (with scraping), image (OCR)
-- User authentication (JWT) and authorization
-- Analysis history per user
-- Basic analytics dashboard
-- Translation and summarization of input text
-- PDF / JSON export of analysis results
-- Dockerized deployment
-- CI/CD pipeline (GitHub Actions)
-- Comprehensive test suite
-
-### 8.2 Out of Scope (Version 1.0)
-
-- Native mobile applications (iOS / Android)
-- Video or audio analysis
-- Real-time social media stream ingestion (Twitter / X firehose)
-- Paid subscription and billing system
-- Multi-tenant SaaS with organization accounts
-- On-premise enterprise deployment
-- Model fine-tuning UI
+| Requirement | Target |
+|---|---|
+| **Response Time** | < 3 seconds for single-text analysis (excluding cold start) |
+| **Availability** | 99.5% uptime target |
+| **Scalability** | Support 100 concurrent users; architecture supports horizontal scaling |
+| **Security** | OWASP Top 10 compliance, JWT auth, input sanitization, rate limiting |
+| **Accessibility** | WCAG 2.1 AA compliance for UI |
+| **Extensibility** | New languages/models can be added without modifying core pipeline |
+| **Observability** | Structured logging, error tracking, basic APM |
+| **Data Privacy** | No analysis content is shared with third parties; optional data retention policy |
 
 ---
 
-## 9. Success Criteria
+## 8. Success Metrics
 
-| Criterion                         | Target                                      | Measurement Method                     |
-| --------------------------------- | ------------------------------------------- | -------------------------------------- |
-| Model accuracy (fake news)        | ≥ 85 % F1 per language                      | Held-out test set evaluation           |
-| Model accuracy (sentiment)        | ≥ 80 % accuracy                             | Benchmark dataset evaluation           |
-| API response time (text input)    | ≤ 3 seconds (p95)                           | Load testing with Locust / k6          |
-| API response time (URL input)     | ≤ 8 seconds (p95)                           | Load testing with Locust / k6          |
-| UI Lighthouse score               | ≥ 85 (Performance, Accessibility, SEO)      | Lighthouse CI                          |
-| Test coverage                     | ≥ 80 % (backend), ≥ 70 % (frontend)        | pytest-cov / Jest coverage             |
-| Zero critical security findings   | 0 Critical, 0 High                          | OWASP ZAP scan + dependency audit      |
-| Deployment                        | Single-command deploy (Docker Compose)       | Documented and tested runbook          |
+| Metric | Target | Measurement Method |
+|---|---|---|
+| Fake News Detection Accuracy | ≥ 92% F1-score on benchmark datasets | Offline evaluation on LIAR, FakeNewsNet |
+| Sentiment Accuracy | ≥ 88% F1-score | Evaluation on multilingual sentiment benchmarks |
+| API Latency (P95) | < 3 seconds | Application Performance Monitoring |
+| User Task Completion Rate | ≥ 90% | Usability testing with 5+ users |
+| Code Coverage | ≥ 80% | pytest + coverage reports |
+| Lighthouse Performance Score | ≥ 85 | Google Lighthouse audit |
 
 ---
 
-## 10. Constraints
+## 9. Constraints & Assumptions
 
-| Constraint          | Detail                                                                                      |
-| ------------------- | ------------------------------------------------------------------------------------------- |
-| **Timeline**        | ~16 weeks (university semester). Phased delivery every 2–3 weeks.                           |
-| **Team Size**       | Solo developer (with AI-assisted development).                                               |
-| **Budget**          | Zero / minimal cloud spend. Free-tier services preferred (Render, Railway, Vercel, Supabase).|
-| **Compute**         | No dedicated GPU for inference in production; CPU inference or free-tier GPU (Hugging Face). |
-| **Academic**        | Must include a project report, presentation, and live demo for evaluation.                  |
+### 9.1 Constraints
 
----
+| Constraint | Description |
+|---|---|
+| **Budget** | Zero-cost infrastructure tier (free Render/Railway + HuggingFace Inference) |
+| **Compute** | No dedicated GPU in production; models must be optimized for CPU or use hosted inference |
+| **Timeline** | ~16 weeks for full delivery (academic semester) |
+| **Team Size** | Solo developer (with AI-assisted development) |
+| **Model Size** | Models must fit within free-tier memory limits (~512 MB RAM) |
 
-## 11. Assumptions
+### 9.2 Assumptions
 
-1. Pre-trained multilingual transformer models (mBERT, XLM-R) provide sufficient baseline quality for fine-tuning on available datasets.
-2. Publicly available fake news datasets exist for at least English and Hindi; other languages may require translated or synthetic augmentation.
-3. The application will be demonstrated on a local machine or free-tier cloud — production-scale traffic is not expected.
-4. The user's browser supports modern ES2020+ JavaScript.
-5. OCR accuracy on clean, typed text images is ≥ 90 %; handwritten or noisy images are out of scope.
-
----
-
-## 12. Risks (High-Level)
-
-> Detailed risk analysis is covered in `16_RISK_ANALYSIS.md`.
-
-| Risk                                         | Likelihood | Impact | Mitigation Strategy                                                |
-| -------------------------------------------- | ---------- | ------ | ------------------------------------------------------------------- |
-| Low-resource language datasets are scarce     | High       | High   | Use cross-lingual transfer learning; augment with translation       |
-| Model inference is too slow on CPU            | Medium     | High   | Use ONNX Runtime / quantized models; add caching layer              |
-| Scope creep from stretch goals                | High       | Medium | Strict MoSCoW prioritization; freeze scope per phase                |
-| Single developer bottleneck                   | High       | Medium | AI-assisted development; modular architecture enables parallel work |
-| Free-tier cloud limits                        | Medium     | Medium | Design for horizontal scaling; local-first development              |
+1. Users have stable internet access.
+2. Primary evaluation will use publicly available benchmark datasets.
+3. Transformer models from HuggingFace Hub are permissively licensed.
+4. The platform is **not** a real-time social media monitoring tool — it is on-demand analysis.
+5. OCR quality depends on image clarity; handwritten text is out of scope.
 
 ---
 
-## 13. Key Stakeholders
+## 10. Out of Scope (v1.0)
 
-| Stakeholder           | Role                        | Interest                                  |
-| --------------------- | --------------------------- | ----------------------------------------- |
-| Vikas                 | Developer / Architect       | Build, learn, deliver a high-quality FYP  |
-| Academic Supervisor   | Evaluator                   | Technical depth, originality, completeness|
-| External Examiner     | Evaluator                   | Demo quality, documentation, rigor        |
-| End Users (demo)      | Beta testers                | Usability, accuracy, speed                |
+The following are explicitly **not** included in the initial release:
 
----
+- Real-time social media stream monitoring
+- Mobile native applications (iOS / Android)
+- Custom model training UI
+- Paid subscription / billing system
+- Multi-tenant organization accounts
+- Browser extension
+- Multimedia analysis (audio / video deepfake detection)
 
-## 14. Glossary
-
-| Term       | Definition                                                                                     |
-| ---------- | ---------------------------------------------------------------------------------------------- |
-| **FYP**    | Final Year Project                                                                             |
-| **mBERT**  | Multilingual BERT — a transformer model pre-trained on 104 languages                           |
-| **XLM-R**  | XLM-RoBERTa — a cross-lingual transformer trained on 100 languages                            |
-| **XAI**    | Explainable Artificial Intelligence                                                            |
-| **LIME**   | Local Interpretable Model-agnostic Explanations                                                |
-| **SHAP**   | SHapley Additive exPlanations                                                                  |
-| **OCR**    | Optical Character Recognition                                                                  |
-| **SPA**    | Single Page Application                                                                        |
-| **JWT**    | JSON Web Token                                                                                 |
-| **CI/CD**  | Continuous Integration / Continuous Deployment                                                 |
-| **MoSCoW** | Must / Should / Could / Won't — prioritization framework                                      |
+These may be considered for future versions and are documented in the backlog.
 
 ---
 
-## 15. Document Cross-References
+## 11. Competitive Landscape
 
-| Document                     | Relationship                                        |
-| ---------------------------- | --------------------------------------------------- |
-| `01_ARCHITECTURE.md`         | Translates this vision into system design           |
-| `02_TECH_STACK.md`           | Technology choices that serve these objectives      |
-| `03_DEVELOPMENT_ROADMAP.md`  | Phased plan to deliver these features               |
-| `06_AI_PIPELINE.md`          | Details the AI models and training strategy         |
-| `16_RISK_ANALYSIS.md`        | Expanded risk register                              |
-
----
-
-## 16. Approval
-
-| Role                | Name   | Date       | Status   |
-| ------------------- | ------ | ---------- | -------- |
-| Architect / Lead    | Vikas  | 2026-08-13 | ✅ Draft  |
-| Academic Supervisor |        |            | Pending  |
+| Tool | Multilingual | Sentiment | XAI | OCR | Free | Self-Hosted |
+|---|---|---|---|---|---|---|
+| Google Fact Check API | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
+| ClaimBuster | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
+| Full Fact (Alpha) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Logically | Partial | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **VerifAI (Ours)** | **✅** | **✅** | **✅** | **✅** | **✅** | **✅** |
 
 ---
 
-*This document is the single source of truth for the project's purpose, scope, and success criteria. All subsequent documents derive from this vision.*
+## 12. High-Level Architecture (Preview)
+
+> *Detailed in `01_ARCHITECTURE.md`*
+
+```
+┌──────────────┐     ┌──────────────┐     ┌──────────────────────┐
+│   Frontend   │────▶│   Backend    │────▶│    AI/ML Pipeline    │
+│  (React +    │◀────│  (FastAPI)   │◀────│  (Transformers +     │
+│   Vite)      │     │              │     │   HuggingFace)       │
+└──────────────┘     └──────┬───────┘     └──────────────────────┘
+                            │
+                     ┌──────▼───────┐
+                     │   Database   │
+                     │ (PostgreSQL  │
+                     │  + Redis)    │
+                     └──────────────┘
+```
+
+**Architecture Style:** Modular Monolith (microservice-ready boundaries)
+
+---
+
+## 13. Guiding Principles
+
+| Principle | Application |
+|---|---|
+| **Transparency Over Accuracy** | A slightly less accurate model with explanations is more valuable than a black-box |
+| **Multilingual First** | Every pipeline decision assumes multilingual input by default |
+| **Progressive Enhancement** | Core features work first; advanced features layer on top |
+| **Documentation as Code** | Docs are versioned, reviewed, and maintained alongside source code |
+| **AI-Assisted Development** | The codebase is designed so AI tools can continue development with minimal context |
+| **Ship Incrementally** | Every phase produces a deployable artifact |
+
+---
+
+## 14. Project Identity
+
+| Attribute | Value |
+|---|---|
+| **Project Name** | Multilingual Fake News Detection and Sentiment Analysis |
+| **Codename** | VerifAI |
+| **Version** | 0.1.0 (Pre-Development) |
+| **License** | MIT |
+| **Repository** | `github.com/<username>/verifai` *(to be created)* |
+| **Documentation** | `/docs/` directory (this document set) |
+| **Primary Language** | Python (Backend/AI), TypeScript (Frontend) |
+| **Author** | Vikas |
+| **Academic Context** | Final Year Project — B.Tech / B.E. Computer Science |
+
+---
+
+## 15. Document Index
+
+| # | Document | Purpose | Status |
+|---|---|---|---|
+| 00 | `PROJECT_VISION.md` | This document — project scope, goals, and identity | ✅ Draft |
+| 01 | `ARCHITECTURE.md` | System architecture, component design, data flow | ⬜ Pending |
+| 02 | `TECH_STACK.md` | Technology choices with rationale | ⬜ Pending |
+| 03 | `DEVELOPMENT_ROADMAP.md` | Phased delivery plan with milestones | ⬜ Pending |
+| 04 | `DATABASE_DESIGN.md` | Schema design, ERD, migration strategy | ⬜ Pending |
+| 05 | `API_SPECIFICATION.md` | REST API contracts and endpoint documentation | ⬜ Pending |
+| 06 | `AI_PIPELINE.md` | ML model architecture, training, inference pipeline | ⬜ Pending |
+| 07 | `UI_UX_DESIGN.md` | Wireframes, component hierarchy, design system | ⬜ Pending |
+| 08 | `CODING_GUIDELINES.md` | Standards, conventions, and best practices | ⬜ Pending |
+| 09 | `PROGRESS_LOG.md` | Sprint-level progress tracking | ⬜ Pending |
+| 10 | `TECHNICAL_DECISIONS.md` | ADR-style decision log | ⬜ Pending |
+| 11 | `BACKLOG.md` | Prioritized feature/bug backlog | ⬜ Pending |
+| 12 | `CHANGELOG.md` | Version-level change history | ⬜ Pending |
+| 13 | `DEPLOYMENT_PLAN.md` | Infrastructure, CI/CD, and release strategy | ⬜ Pending |
+| 14 | `TESTING_STRATEGY.md` | Test plan, coverage targets, and tooling | ⬜ Pending |
+| 15 | `SECURITY_PLAN.md` | Threat model, auth design, and hardening | ⬜ Pending |
+| 16 | `RISK_ANALYSIS.md` | Risk register with mitigations | ⬜ Pending |
+| 17 | `FOLDER_STRUCTURE.md` | Repository layout and module organization | ⬜ Pending |
+| 18 | `PROJECT_TIMELINE.md` | Gantt-style timeline with dependencies | ⬜ Pending |
+| — | `prompts/ai_context.md` | Compact context file for AI-assisted development | ⬜ Pending |
+
+---
+
+*Document Version: 1.0.0*
+*Created: 2026-08-05*
+*Author: Vikas (Principal Architect)*
+*Status: DRAFT — Awaiting Approval*

@@ -22,8 +22,8 @@ class SentimentLabel:
 
     CLASS_MAP: dict[int, str] = {
         0: NEGATIVE,
-        1: NEUTRAL,
-        2: POSITIVE,
+        1: POSITIVE,
+        2: NEUTRAL,
     }
 
 

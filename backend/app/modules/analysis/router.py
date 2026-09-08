@@ -7,11 +7,15 @@ sentiment analysis results.
 from __future__ import annotations
 
 import time
+import uuid
 
 import structlog
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.infrastructure.database.session import get_db_session
+from app.models.analysis import AnalysisResult
 from app.modules.analysis.services import AnalysisService
 
 logger = structlog.get_logger(__name__)
@@ -101,6 +105,11 @@ class SentimentResult(BaseModel):
 class AnalyzeResponse(BaseModel):
     """Response body for text analysis."""
 
+    id: uuid.UUID = Field(
+        ...,
+        description="Unique identifier for the analysis record.",
+    )
+
     credibility: CredibilityResult
 
     sentiment: SentimentResult
@@ -141,11 +150,15 @@ _analysis_service = AnalysisService()
         },
     },
 )
-async def analyze_text(request: AnalyzeRequest) -> AnalyzeResponse:
+async def analyze_text(
+    request: AnalyzeRequest,
+    db: AsyncSession = Depends(get_db_session),
+) -> AnalyzeResponse:
     """Analyze text for credibility and sentiment.
 
     Runs the input text through both the fake news detection model
-    and the sentiment analysis model, returning combined results.
+    and the sentiment analysis model, saves the result to the database,
+    and returns combined results with a unique analysis ID.
     """
 
     start_time = time.perf_counter()
@@ -178,14 +191,52 @@ async def analyze_text(request: AnalyzeRequest) -> AnalyzeResponse:
         2,
     )
 
+    # ── Persist to Database ──
+    record_id = uuid.uuid4()
+    try:
+        avg_confidence = round(
+            (results["credibility"]["confidence"] + results["sentiment"]["confidence"]) / 2,
+            4,
+        )
+        record = AnalysisResult(
+            id=record_id,
+            input_type="text",
+            original_text=request.text,
+            detected_language=request.language if request.language != "auto" else "en",
+            credibility_label=results["credibility"]["label"],
+            credibility_score=results["credibility"]["confidence"],
+            sentiment_label=results["sentiment"]["label"],
+            sentiment_score=results["sentiment"]["confidence"],
+            confidence=avg_confidence,
+            processing_time_ms=elapsed_ms,
+            is_mock=results["credibility"]["is_mock"] or results["sentiment"]["is_mock"],
+        )
+        db.add(record)
+        await db.flush()
+
+        logger.info(
+            "analysis_saved",
+            analysis_id=str(record_id),
+            processing_time_ms=elapsed_ms,
+        )
+
+    except Exception as db_exc:
+        logger.warning(
+            "analysis_db_save_failed",
+            error=str(db_exc),
+            analysis_id=str(record_id),
+        )
+
     logger.info(
         "analysis_complete",
+        analysis_id=str(record_id),
         credibility_label=results["credibility"]["label"],
         sentiment_label=results["sentiment"]["label"],
         processing_time_ms=elapsed_ms,
     )
 
     return AnalyzeResponse(
+        id=record_id,
         credibility=CredibilityResult(
             label=results["credibility"]["label"],
             confidence=results["credibility"]["confidence"],

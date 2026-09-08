@@ -52,6 +52,17 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Aligned frontend default `API_BASE_URL` to `http://127.0.0.1:8000`
 - Fixed `vite.config.ts` Vitest configuration typing via `vitest/config` import
 
+#### Milestone 3.1 — Analysis History Persistence & UI (2026-09-08)
+- Created `AnalysisResult` SQLAlchemy model in `backend/app/models/analysis.py` with UUID, timestamp, soft-delete, and nullable `user_id`
+- Created and executed Alembic migration `8a9aac35e684_create_analysis_results_table.py`
+- Implemented history REST endpoints in `backend/app/modules/history/router.py`:
+  - `GET /api/v1/history` (paginated list, sorted descending, excludes soft-deleted items)
+  - `GET /api/v1/history/{id}` (single item lookup)
+  - `DELETE /api/v1/history/{id}` (soft-delete returning 204 No Content)
+- Mounted `history_router` under `/api/v1` in `backend/app/main.py`
+- Added TypeScript types (`HistoryItem`, `PaginatedHistoryResponse`) and API methods (`getHistory`, `getHistoryById`, `deleteHistory`) to `frontend/src/services/api.ts`
+- Implemented full interactive History page in `frontend/src/features/history/pages/HistoryPage.tsx` with list view, badges, detail modal, pagination, and soft deletion
+
 ### Changed
 
 #### Sprint 2b — API Hardening (2026-08-21)
@@ -75,6 +86,10 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 #### Sprint 4 — Frontend (2026-09-08)
 - `api.ts` — Axios timeout increased from 30s to 120s for CPU inference (~68s)
 - `AnalyzePage.tsx` — converted from static placeholder to functional component (123 → 686 lines)
+
+#### Milestone 3.1 — History Persistence (2026-09-08)
+- `backend/app/modules/analysis/router.py` — automatically save analysis results into PostgreSQL and return `id`
+- `backend/app/infrastructure/database/migrations/env.py` — import `app.models` so Alembic detects models metadata
 
 ### Fixed
 

@@ -19,6 +19,7 @@ from app.middleware.request_id import RequestIDMiddleware
 from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.routers.health import router as health_router
 from app.modules.analysis.router import router as analysis_router
+from app.modules.history.router import router as history_router
 
 logger = structlog.get_logger(__name__)
 
@@ -93,6 +94,7 @@ def create_app() -> FastAPI:
     # ── Routers ──
     app.include_router(health_router)
     app.include_router(analysis_router, prefix="/api/v1")
+    app.include_router(history_router, prefix="/api/v1")
 
     return app
 

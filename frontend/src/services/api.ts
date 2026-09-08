@@ -22,9 +22,35 @@ export interface SentimentResult {
 }
 
 export interface AnalyzeResponse {
+  id?: string;
   credibility: CredibilityResult;
   sentiment: SentimentResult;
   processing_time_ms: number;
+}
+
+// ── History API Types ──
+
+export interface HistoryItem {
+  id: string;
+  input_type: 'text' | 'url' | 'image' | string;
+  original_text: string;
+  detected_language: string;
+  credibility_label: 'Real' | 'Fake';
+  credibility_score: number;
+  sentiment_label: 'Positive' | 'Negative' | 'Neutral';
+  sentiment_score: number;
+  confidence: number;
+  processing_time_ms: number;
+  is_mock: boolean;
+  created_at: string;
+}
+
+export interface PaginatedHistoryResponse {
+  items: HistoryItem[];
+  total: number;
+  page: number;
+  per_page: number;
+  total_pages: number;
 }
 
 /**
@@ -87,4 +113,45 @@ export async function analyzeText(
   } satisfies AnalyzeRequest);
 
   return response.data;
+}
+
+// ── History API ──
+
+/**
+ * Fetch paginated analysis history.
+ */
+export async function getHistory(
+  page: number = 1,
+  perPage: number = 10,
+  credibility?: string,
+  sentiment?: string,
+  search?: string,
+): Promise<PaginatedHistoryResponse> {
+  const params = new URLSearchParams({
+    page: String(page),
+    per_page: String(perPage),
+  });
+  if (credibility) params.append('credibility', credibility);
+  if (sentiment) params.append('sentiment', sentiment);
+  if (search) params.append('search', search);
+
+  const response = await api.get<PaginatedHistoryResponse>(
+    `/api/v1/history?${params.toString()}`,
+  );
+  return response.data;
+}
+
+/**
+ * Fetch details of a single analysis record by ID.
+ */
+export async function getHistoryById(id: string): Promise<HistoryItem> {
+  const response = await api.get<HistoryItem>(`/api/v1/history/${id}`);
+  return response.data;
+}
+
+/**
+ * Soft-delete an analysis record by ID.
+ */
+export async function deleteHistory(id: string): Promise<void> {
+  await api.delete(`/api/v1/history/${id}`);
 }

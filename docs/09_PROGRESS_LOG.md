@@ -17,13 +17,13 @@
 
 | Property           | Value                                      |
 | ------------------ | ------------------------------------------ |
-| **Current Phase**  | Phase 2 — Frontend Integration             |
-| **Current Sprint** | Sprint 4 — Frontend Text Analysis          |
+| **Current Phase**  | Phase 3 — Core Platform Features           |
+| **Current Sprint** | Milestone 3.1 — History Persistence & UI   |
 | **Sprint Start**   | 2026-09-08                                 |
-| **Sprint End**     | In Progress                                |
+| **Sprint End**     | Completed                                  |
 | **Git Branch**     | `master`                                   |
 | **Latest Tag**     | None                                       |
-| **Blockers**       | None — models trained, backend running     |
+| **Blockers**       | None — models trained, DB running          |
 
 ---
 
@@ -266,6 +266,48 @@ Connect the existing React Analyze page to the running backend API, enabling end
 
 ---
 
+## Phase 3 — Milestone 3.1: Analysis History Persistence & UI
+**Date:** 2026-09-08
+
+### Objective
+Persist text analysis results into PostgreSQL automatically, provide backend history APIs (paginated retrieval, single lookup, and soft deletion), and provide a functional, responsive History UI in the React frontend.
+
+### Completed — VERIFIED
+
+#### Database & Backend Persistence (`backend/app/models/`, `backend/app/modules/history/`)
+- [x] Created SQLAlchemy `AnalysisResult` model in `backend/app/models/analysis.py` inheriting `Base`, `UUIDPrimaryKeyMixin`, `TimestampMixin`, `SoftDeleteMixin`
+- [x] Configured `user_id` as nullable UUID for forward compatibility with Milestone 3.3 Auth
+- [x] Configured and applied Alembic migration (`8a9aac35e684_create_analysis_results_table.py`)
+- [x] Updated `backend/app/modules/analysis/router.py` to persist analyses to PostgreSQL automatically upon successful inference
+- [x] Added `id: uuid.UUID` to `AnalyzeResponse` schema
+- [x] Implemented `backend/app/modules/history/router.py`:
+  - `GET /api/v1/history` (paginated, sorted, filtered by `is_deleted == False`)
+  - `GET /api/v1/history/{id}` (single item lookup)
+  - `DELETE /api/v1/history/{id}` (soft deletion with 204 response)
+- [x] Registered `history_router` under `/api/v1` in `backend/app/main.py`
+
+#### Frontend History UI (`frontend/src/features/history/pages/HistoryPage.tsx`, `api.ts`)
+- [x] Added TypeScript interfaces `HistoryItem` and `PaginatedHistoryResponse` to `api.ts`
+- [x] Added `getHistory()`, `getHistoryById()`, and `deleteHistory()` API functions
+- [x] Converted `HistoryPage.tsx` into an interactive, real-time UI
+- [x] Added table/list view with text snippet, Real/Fake badge, Sentiment badge, confidence %, processing time, and formatted timestamp
+- [x] Added "View Details" inspection modal displaying full text, exact scores, language, and IDs
+- [x] Added soft-delete confirmation with instant UI removal
+- [x] Added pagination controls (Previous, Next, page numbers)
+- [x] Implemented empty, loading, and error states gracefully
+
+#### Build & E2E Verification
+- [x] `npx tsc --noEmit` — **0 TypeScript errors**
+- [x] `npm run build` — **Success** (built cleanly in 2.14s)
+- [x] End-to-end browser verification via browser subagent:
+  - Submitted text analysis on `/analyze`
+  - Navigated to `/history`
+  - Verified newly analyzed item is displayed with badges and timestamps
+  - Inspected item via detail modal
+  - Verified persistence across page reloads
+
+---
+
 ## Files Tracker
 
 ### Files Added
@@ -298,6 +340,11 @@ Connect the existing React Analyze page to the running backend API, enabling end
 | 2026-08-21 | `backend/tests/integration/test_analysis_validation.py` | 1 | Validation tests |
 | 2026-09-08 | `models/fake_news_model/`           | 1     | Trained XLM-R fake news model (untracked) |
 | 2026-09-08 | `models/sentiment_model/`           | 1     | Trained XLM-R sentiment model (untracked) |
+| 2026-09-08 | `backend/app/models/__init__.py`    | 3     | Model registry exports    |
+| 2026-09-08 | `backend/app/models/analysis.py`    | 3     | AnalysisResult SQLAlchemy model |
+| 2026-09-08 | `backend/app/infrastructure/database/migrations/versions/8a9aac35e684_create_analysis_results_table.py` | 3 | Alembic migration for analysis_results |
+| 2026-09-08 | `backend/app/modules/history/__init__.py` | 3 | History module init |
+| 2026-09-08 | `backend/app/modules/history/router.py` | 3 | History REST router |
 
 ### Files Modified
 
@@ -311,10 +358,12 @@ Connect the existing React Analyze page to the running backend API, enabling end
 | 2026-08-21 | `docs/prompts/ai_context.md`              | Complete rewrite                    | Fixed false state claims |
 | 2026-09-08 | `backend/app/modules/detection/model.py`  | Fixed model path resolution         | Real model loads         |
 | 2026-09-08 | `backend/app/modules/sentiment/model.py`  | Fixed model path + CLASS_MAP        | Real model loads         |
-| 2026-09-08 | `backend/app/modules/analysis/router.py`  | Minor path adjustments              | Supports real models     |
+| 2026-09-08 | `backend/app/modules/analysis/router.py`  | Persist analysis to DB + return id  | Auto-history persistence |
 | 2026-09-08 | `backend/app/config.py`                   | Added 127.0.0.1 origins to CORS     | Fix browser connection   |
-| 2026-09-08 | `frontend/src/services/api.ts`            | Types, timeout 120s, analyzeText(), 127.0.0.1 base | API integration |
-| 2026-09-08 | `frontend/src/features/analyze/pages/AnalyzePage.tsx` | Full functional implementation | Text analysis UI |
+| 2026-09-08 | `backend/app/main.py`                     | Registered history_router           | Mount /api/v1/history    |
+| 2026-09-08 | `backend/app/infrastructure/database/migrations/env.py` | Import app.models    | Alembic model awareness  |
+| 2026-09-08 | `frontend/src/services/api.ts`            | Added History types & API calls     | History API integration  |
+| 2026-09-08 | `frontend/src/features/history/pages/HistoryPage.tsx` | Full interactive implementation | History table + modal |
 | 2026-09-08 | `frontend/vite.config.ts`                 | Vitest type fix + proxy 127.0.0.1   | Build & proxy alignment  |
 | 2026-09-08 | `.env.example`                            | Updated CORS_ORIGINS & base URL     | Dev documentation config |
 
@@ -340,8 +389,8 @@ Connect the existing React Analyze page to the running backend API, enabling end
 | 2026-08-13 | `a2b462a` | —    | Initial commit with project scaffolding  |
 | 2026-08-21 | `f67b93e` | —    | Harden analysis API and close foundation gaps |
 | 2026-08-21 | `1e536fc` | —    | Add Colab training scripts for fake news and sentiment |
-
-**Uncommitted changes:** Backend model path fixes, model weights (`models/`), frontend text analysis integration.
+| 2026-09-08 | `2161e56` | —    | feat: complete text analysis pipeline    |
+| 2026-09-08 | `eb7194f` | —    | chore: prepare repository for GitHub     |
 
 ---
 

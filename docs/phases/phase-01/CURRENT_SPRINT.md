@@ -1,90 +1,76 @@
-# Phase 2 — Sprint 4: Frontend Text Analysis Integration
+# Phase 3 — Milestone 3.1: Analysis History Persistence & UI
 
 | Field | Value |
 |-------|-------|
-| **Phase** | 2 — Frontend Integration |
-| **Sprint** | 4 |
+| **Phase** | 3 — Core Platform Features |
+| **Milestone** | 3.1: History |
 | **Started** | 2026-09-08 |
 | **Target End** | 2026-09-08 |
 | **Status** | Completed |
 
 ## Sprint Objective
 
-Connect the React Analyze page to the running FastAPI backend, enabling end-to-end text analysis (fake news detection + sentiment analysis) from the browser.
+Persist text analysis results into PostgreSQL automatically, provide backend history APIs (paginated retrieval, single lookup, and soft deletion), and provide a functional, responsive History UI in the React frontend.
 
 ## Prerequisites — VERIFIED
 
 | Prerequisite | Status |
 |---|---|
-| XLM-RoBERTa fake news model trained (98.39% accuracy) | ✅ Done |
-| XLM-RoBERTa sentiment model trained (97.95% accuracy) | ✅ Done |
-| Model weights in `models/fake_news_model/` and `models/sentiment_model/` | ✅ Present |
-| Backend loads real models (not mock) | ✅ Verified |
-| `POST /api/v1/analyze/text` returns `is_mock: false` | ✅ Verified |
-| PostgreSQL + Redis Docker containers running | ✅ Verified |
-| FastAPI running on port 8000 | ✅ Verified |
+| XLM-RoBERTa real inference pipeline | ✅ Verified |
+| `POST /api/v1/analyze/text` returns real model predictions | ✅ Verified |
+| PostgreSQL database running on port 5432 | ✅ Verified |
+| React frontend running on port 5173 | ✅ Verified |
 
 ## Tasks
 
-### API Service & Connection
-- [x] Add TypeScript interfaces (`AnalyzeRequest`, `CredibilityResult`, `SentimentResult`, `AnalyzeResponse`)
-- [x] Change Axios timeout from 30s to 120s (CPU inference ~68s)
-- [x] Add `analyzeText(text, language?)` function
-- [x] Update API base URL fallback to `http://127.0.0.1:8000` to match local backend
-- [x] Configure backend CORS origins to include `http://127.0.0.1:5173` and `http://127.0.0.1:3000`
+### Backend & Database
+- [x] Create SQLAlchemy `AnalysisResult` model in `backend/app/models/analysis.py` inheriting `Base`, `UUIDPrimaryKeyMixin`, `TimestampMixin`, `SoftDeleteMixin`
+- [x] Set `user_id` as nullable UUID for seamless forward compatibility with Milestone 3.3 Auth
+- [x] Create and apply Alembic migration (`8a9aac35e684_create_analysis_results_table.py`)
+- [x] Update `backend/app/modules/analysis/router.py` to persist analyses to `analysis_results` table automatically upon completion
+- [x] Include `id: uuid.UUID` in `AnalyzeResponse` schema
+- [x] Implement `backend/app/modules/history/router.py`:
+  - `GET /api/v1/history` (paginated, sorted, filtered by `is_deleted == False`)
+  - `GET /api/v1/history/{id}` (single item lookup)
+  - `DELETE /api/v1/history/{id}` (soft deletion setting `is_deleted = True` and `deleted_at`)
+- [x] Register `history_router` under `/api/v1` in `backend/app/main.py`
 
-### Analyze Page
-- [x] Convert static prototype to functional React component
-- [x] Controlled textarea with React state
-- [x] Character count display (live count / 50,000)
-- [x] Minimum 10 character validation
-- [x] Analyze button with disabled/loading/active states
-- [x] Prevent duplicate submissions during loading
-- [x] Clear button (resets text, results, errors)
-- [x] User-friendly error messages (timeout, network, 422, 500, 503)
-- [x] Loading indicator with CPU inference time warning
-- [x] Credibility card (Real/Fake, confidence bar, percentage)
-- [x] Sentiment card (Positive/Negative/Neutral, confidence bar, percentage)
-- [x] Mock model badge (shown only when `is_mock: true`)
-- [x] Processing time display
-- [x] URL and Image tabs visually disabled with "(soon)" label
+### Frontend & UI
+- [x] Add history TypeScript interfaces (`HistoryItem`, `PaginatedHistoryResponse`) to `frontend/src/services/api.ts`
+- [x] Add `getHistory()`, `getHistoryById()`, and `deleteHistory()` API functions
+- [x] Upgrade `HistoryPage.tsx` from static placeholder to full interactive component
+- [x] Support text snippet display, credibility badge, sentiment badge, confidence %, and timestamp
+- [x] Add "View Details" inspection modal with complete text and inference metrics
+- [x] Add soft-delete confirmation and instant removal
+- [x] Implement pagination controls (Previous, Next, page numbers)
+- [x] Handle loading, empty, and error states gracefully
 
-### Build & E2E Verification
-- [x] `tsc --project tsconfig.app.json` — 0 errors
-- [x] `npm run build` (`tsc -b && vite build`) — success (resolved `vitest/config` typing in `vite.config.ts`)
-- [x] E2E browser test on `http://127.0.0.1:5173/analyze` calling `http://127.0.0.1:8000` — verified real model results (Real 100.0%, Positive 97.5%)
+### Build & Verification
+- [x] `npx tsc --noEmit` — 0 errors
+- [x] `npm run build` — successful build
+- [x] E2E browser verification: analysis created, saved, retrieved in History, inspected via modal, and confirmed persistent across page reloads
 
 ## Files Changed
 
 | Action | File |
 |--------|------|
-| MODIFY | `backend/app/config.py` |
+| NEW | `backend/app/models/__init__.py` |
+| NEW | `backend/app/models/analysis.py` |
+| NEW | `backend/app/infrastructure/database/migrations/versions/8a9aac35e684_create_analysis_results_table.py` |
+| NEW | `backend/app/modules/history/__init__.py` |
+| NEW | `backend/app/modules/history/router.py` |
+| MODIFY | `backend/app/infrastructure/database/migrations/env.py` |
+| MODIFY | `backend/app/main.py` |
+| MODIFY | `backend/app/modules/analysis/router.py` |
 | MODIFY | `frontend/src/services/api.ts` |
-| MODIFY | `frontend/src/features/analyze/pages/AnalyzePage.tsx` |
-| MODIFY | `frontend/vite.config.ts` |
-| MODIFY | `.env.example` |
-
-## NOT in Scope (intentionally deferred)
-
-- URL analysis
-- Image analysis
-- Explainability (LIME/SHAP)
-- Summary generation
-- Translation
-- Authentication
-- History persistence
+| MODIFY | `frontend/src/features/history/pages/HistoryPage.tsx` |
 
 ## Definition of Done
 
-1. ✅ TypeScript compiles with zero errors
-2. ✅ Vite builds successfully
-3. ✅ Analyze page renders and is interactive
-4. ✅ API call reaches backend and returns results
-5. ✅ Results display correctly (credibility + sentiment + processing time)
-6. ✅ Error states handled gracefully
-7. ✅ No new dependencies introduced
-8. ✅ Existing routes still work
-
-## Next Sprint
-
-Sprint 5: End-to-end browser testing against the live backend, then begin Dashboard/History integration or additional analysis features (URL, explainability).
+1. ✅ Text analyses automatically saved in PostgreSQL
+2. ✅ History API endpoints functional and tested
+3. ✅ History page displays real records with badges and timestamps
+4. ✅ Detail inspection modal works smoothly
+5. ✅ Soft deletion works correctly
+6. ✅ TypeScript & Vite build clean with zero errors
+7. ✅ Verified end-to-end with real browser flow

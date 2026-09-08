@@ -1,6 +1,31 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+
+// ── Analysis API Types ──
+
+export interface AnalyzeRequest {
+  text: string;
+  language?: string;
+}
+
+export interface CredibilityResult {
+  label: 'Real' | 'Fake';
+  confidence: number;
+  is_mock: boolean;
+}
+
+export interface SentimentResult {
+  label: 'Positive' | 'Negative' | 'Neutral';
+  confidence: number;
+  is_mock: boolean;
+}
+
+export interface AnalyzeResponse {
+  credibility: CredibilityResult;
+  sentiment: SentimentResult;
+  processing_time_ms: number;
+}
 
 /**
  * Pre-configured Axios instance for all API calls.
@@ -17,7 +42,7 @@ export const api = axios.create({
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
-  timeout: 30_000, // 30 seconds
+  timeout: 120_000, // 120 seconds — CPU model inference takes ~68s
   withCredentials: true, // Send cookies (refresh token)
 });
 
@@ -43,3 +68,23 @@ api.interceptors.response.use(
     return Promise.reject(error);
   },
 );
+
+// ── Analysis API ──
+
+/**
+ * Analyze text for fake news detection and sentiment analysis.
+ *
+ * @param text - The text content to analyze (10–50,000 characters).
+ * @param language - Language code or "auto" for automatic detection.
+ */
+export async function analyzeText(
+  text: string,
+  language: string = 'auto',
+): Promise<AnalyzeResponse> {
+  const response = await api.post<AnalyzeResponse>('/api/v1/analyze/text', {
+    text,
+    language,
+  } satisfies AnalyzeRequest);
+
+  return response.data;
+}

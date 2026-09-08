@@ -1,0 +1,79 @@
+{
+  "config": {
+    "model_name": "xlm-roberta-base",
+    "num_labels": 2,
+    "max_length": 256,
+    "batch_size": 16,
+    "learning_rate": 2e-05,
+    "weight_decay": 0.01,
+    "epochs": 3,
+    "warmup_ratio": 0.1,
+    "seed": 42,
+    "label_map": {
+      "0": "Fake",
+      "1": "Real"
+    },
+    "output_dir": "/content/drive/MyDrive/veritasai/models/fake_news_model",
+    "dataset_dir": "/content/drive/MyDrive/veritasai/datasets"
+  },
+  "training_history": {
+    "epoch": [
+      1,
+      2,
+      3
+    ],
+    "train_loss": [
+      0.11363777546947221,
+      0.04211511341060546,
+      0.03797837783640621
+    ],
+    "val_accuracy": [
+      0.969323641739559,
+      0.9837378341751879,
+      0.9838610324011334
+    ],
+    "val_f1": [
+      0.9692317873944476,
+      0.9837526884322552,
+      0.9838730502045461
+    ],
+    "learning_rate": [
+      1.68568699059928e-05,
+      6.03224431194101e-06,
+      8.291837204448536e-11
+    ]
+  },
+  "test_results": {
+    "accuracy": 0.9838610324011334,
+    "f1_score": 0.9838713642312055,
+    "classification_report": {
+      "Fake": {
+        "precision": 0.9713400464756003,
+        "recall": 0.994711792702274,
+        "f1-score": 0.9828870019595036,
+        "support": 3782.0
+      },
+      "Real": {
+        "precision": 0.9952874646559849,
+        "recall": 0.9743944636678201,
+        "f1-score": 0.9847301550297237,
+        "support": 4335.0
+      },
+      "accuracy": 0.9838610324011334,
+      "macro avg": {
+        "precision": 0.9833137555657927,
+        "recall": 0.984553128185047,
+        "f1-score": 0.9838085784946137,
+        "support": 8117.0
+      },
+      "weighted avg": {
+        "precision": 0.9841295078297913,
+        "recall": 0.9838610324011334,
+        "f1-score": 0.9838713642312055,
+        "support": 8117.0
+      }
+    }
+  },
+  "best_epoch": 3,
+  "best_val_f1": 0.9838730502045461
+}

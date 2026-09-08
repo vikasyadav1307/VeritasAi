@@ -18,31 +18,32 @@ Codename: **VeritasAI**. Solo-developer FYP. 16-week timeline.
 ## Current State
 
 - **Phase**: 1 — Core AI Pipeline
-- **Sprint**: 2 (completed)
-- **Status**: Foundation closed. Analysis API hardened. Models still mock-only.
-- **Next**: Sprint 3 — Train or integrate real AI models
+- **Sprint**: 3 (Colab scripts ready, awaiting user training)
+- **Status**: Training scripts created. User needs to run on Colab with GPU.
+- **Next**: User runs training on Colab → downloads weights → API uses real predictions
 
 ## Completed Work
 
 ### Phase 0 — Foundation (Sprint 1)
 - Monorepo structure, FastAPI + React scaffolding, Docker Compose, CI/CD, pre-commit
-- 1 git commit: `a2b462a chore(project): Initial commit with project scaffolding`
 
 ### Phase 1 — Sprint 2
-- Created `docs/prompts/START_HERE.md` and `AI_RULES.md`
-- Created `docs/phases/phase-01/CURRENT_SPRINT.md`
-- Hardened `analysis/router.py` — proper Pydantic V2 models, `is_mock` flag, `processing_time_ms`, structured error handling
-- Made `analysis/services.py` async with structlog logging and per-model timing
-- Rewrote `detection/model.py` and `sentiment/model.py` — structlog, type annotations, `ModelStatus` enum, `PredictionResult` dataclass
-- Expanded test suite: 20 tests (7 analysis + 8 validation + 5 health), all passing
-- Verified backend starts and endpoint returns correct mock response
-- Fixed documentation inconsistencies (state mismatch, missing files)
+- Created prompt docs, hardened analysis API, expanded tests to 20
+- All code uses structlog, type annotations, Pydantic V2
+
+### Phase 1 — Sprint 3
+- Created `notebooks/03_train_fake_news.py` — Colab training script for binary Fake/Real classification
+- Created `notebooks/04_train_sentiment.py` — Colab training script with 6-emotion → 3-sentiment mapping
+- Fixed backend sentiment label mapping to match training (0=Negative, 1=Positive, 2=Neutral)
+- Key finding: Dataset has 6 emotions (sadness, joy, love, anger, fear, surprise), mapped to 3 sentiments
 
 ## Current Task
 
-- **Sprint 3**: Train or integrate real AI models
-  - Option A: Prepare notebooks for Colab/Kaggle GPU execution
-  - Option B: Integrate pre-trained HuggingFace pipeline models for end-to-end verification
+- **User action**: Run training scripts on Google Colab
+  1. Upload datasets to Colab/Google Drive
+  2. Run `03_train_fake_news.py` (~45 min on T4 GPU)
+  3. Run `04_train_sentiment.py` (~20 min on T4 GPU)
+  4. Download `fake_news_model/` and `sentiment_model/` to `models/`
 
 ## Folder Structure
 

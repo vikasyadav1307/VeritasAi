@@ -1,86 +1,90 @@
-# Phase 1 — Sprint 2: Close Foundation & Harden Analysis API
+# Phase 2 — Sprint 4: Frontend Text Analysis Integration
 
 | Field | Value |
 |-------|-------|
-| **Phase** | 1 — Core AI Pipeline |
-| **Sprint** | 2 |
-| **Started** | 2026-08-21 |
-| **Target End** | 2026-08-27 |
-| **Status** | In Progress |
+| **Phase** | 2 — Frontend Integration |
+| **Sprint** | 4 |
+| **Started** | 2026-09-08 |
+| **Target End** | 2026-09-08 |
+| **Status** | Completed |
 
 ## Sprint Objective
 
-Close remaining Phase 0 gaps (missing docs, state inconsistencies) and harden the existing analysis API to production quality. Prepare the codebase for real model integration.
+Connect the React Analyze page to the running FastAPI backend, enabling end-to-end text analysis (fake news detection + sentiment analysis) from the browser.
+
+## Prerequisites — VERIFIED
+
+| Prerequisite | Status |
+|---|---|
+| XLM-RoBERTa fake news model trained (98.39% accuracy) | ✅ Done |
+| XLM-RoBERTa sentiment model trained (97.95% accuracy) | ✅ Done |
+| Model weights in `models/fake_news_model/` and `models/sentiment_model/` | ✅ Present |
+| Backend loads real models (not mock) | ✅ Verified |
+| `POST /api/v1/analyze/text` returns `is_mock: false` | ✅ Verified |
+| PostgreSQL + Redis Docker containers running | ✅ Verified |
+| FastAPI running on port 8000 | ✅ Verified |
 
 ## Tasks
 
-### Documentation
-- [x] Create `docs/prompts/START_HERE.md`
-- [x] Create `docs/prompts/AI_RULES.md`
-- [ ] Fix `docs/prompts/ai_context.md`
-- [ ] Update `docs/09_PROGRESS_LOG.md`
-- [x] Create `docs/phases/phase-01/CURRENT_SPRINT.md` (this file)
+### API Service & Connection
+- [x] Add TypeScript interfaces (`AnalyzeRequest`, `CredibilityResult`, `SentimentResult`, `AnalyzeResponse`)
+- [x] Change Axios timeout from 30s to 120s (CPU inference ~68s)
+- [x] Add `analyzeText(text, language?)` function
+- [x] Update API base URL fallback to `http://127.0.0.1:8000` to match local backend
+- [x] Configure backend CORS origins to include `http://127.0.0.1:5173` and `http://127.0.0.1:3000`
 
-### Backend Verification
-- [ ] Verify backend installs and starts
-- [ ] Verify existing tests pass
-- [ ] Verify analysis endpoint returns mock results
+### Analyze Page
+- [x] Convert static prototype to functional React component
+- [x] Controlled textarea with React state
+- [x] Character count display (live count / 50,000)
+- [x] Minimum 10 character validation
+- [x] Analyze button with disabled/loading/active states
+- [x] Prevent duplicate submissions during loading
+- [x] Clear button (resets text, results, errors)
+- [x] User-friendly error messages (timeout, network, 422, 500, 503)
+- [x] Loading indicator with CPU inference time warning
+- [x] Credibility card (Real/Fake, confidence bar, percentage)
+- [x] Sentiment card (Positive/Negative/Neutral, confidence bar, percentage)
+- [x] Mock model badge (shown only when `is_mock: true`)
+- [x] Processing time display
+- [x] URL and Image tabs visually disabled with "(soon)" label
 
-### Analysis API Hardening
-- [ ] Improve `analysis/router.py` — proper Pydantic models, structured errors
-- [ ] Make `analysis/services.py` async with logging and timing
-- [ ] Fix `detection/model.py` — structlog, types, model status
-- [ ] Fix `sentiment/model.py` — structlog, types, model status
-- [ ] Add `test_analysis_validation.py` — invalid input tests
+### Build & E2E Verification
+- [x] `tsc --project tsconfig.app.json` — 0 errors
+- [x] `npm run build` (`tsc -b && vite build`) — success (resolved `vitest/config` typing in `vite.config.ts`)
+- [x] E2E browser test on `http://127.0.0.1:5173/analyze` calling `http://127.0.0.1:8000` — verified real model results (Real 100.0%, Positive 97.5%)
 
-## Files Expected
+## Files Changed
 
 | Action | File |
 |--------|------|
-| NEW | `docs/prompts/START_HERE.md` |
-| NEW | `docs/prompts/AI_RULES.md` |
-| NEW | `docs/phases/phase-01/CURRENT_SPRINT.md` |
-| NEW | `backend/tests/integration/test_analysis_validation.py` |
-| MODIFY | `docs/prompts/ai_context.md` |
-| MODIFY | `docs/09_PROGRESS_LOG.md` |
-| MODIFY | `backend/app/modules/analysis/router.py` |
-| MODIFY | `backend/app/modules/analysis/services.py` |
-| MODIFY | `backend/app/modules/detection/model.py` |
-| MODIFY | `backend/app/modules/sentiment/model.py` |
+| MODIFY | `backend/app/config.py` |
+| MODIFY | `frontend/src/services/api.ts` |
+| MODIFY | `frontend/src/features/analyze/pages/AnalyzePage.tsx` |
+| MODIFY | `frontend/vite.config.ts` |
+| MODIFY | `.env.example` |
 
-## Dependencies
+## NOT in Scope (intentionally deferred)
 
-- Python 3.11+ with backend dependencies installed
-- No GPU required (mock models only)
-- No Docker required (can test standalone)
-
-## Testing
-
-```bash
-cd backend
-pip install -e ".[dev]"
-pytest tests/ -v
-```
-
-Manual:
-```bash
-uvicorn app.main:app --reload --port 8000
-curl -X POST http://localhost:8000/api/v1/analyze/text \
-  -H "Content-Type: application/json" \
-  -d '{"text": "Scientists discover a breakthrough method for detecting misinformation online."}'
-```
+- URL analysis
+- Image analysis
+- Explainability (LIME/SHAP)
+- Summary generation
+- Translation
+- Authentication
+- History persistence
 
 ## Definition of Done
 
-1. All existing tests pass
-2. New validation tests pass
-3. Backend starts without errors
-4. Analysis endpoint returns well-structured response
-5. No `print()` statements in backend code
-6. All functions have type annotations
-7. `ai_context.md` reflects accurate current state
-8. Progress log updated
+1. ✅ TypeScript compiles with zero errors
+2. ✅ Vite builds successfully
+3. ✅ Analyze page renders and is interactive
+4. ✅ API call reaches backend and returns results
+5. ✅ Results display correctly (credibility + sentiment + processing time)
+6. ✅ Error states handled gracefully
+7. ✅ No new dependencies introduced
+8. ✅ Existing routes still work
 
 ## Next Sprint
 
-Sprint 3: Model training preparation — finalize notebooks for Colab/Kaggle execution, or integrate pre-trained HuggingFace pipeline models for end-to-end stack verification.
+Sprint 5: End-to-end browser testing against the live backend, then begin Dashboard/History integration or additional analysis features (URL, explainability).

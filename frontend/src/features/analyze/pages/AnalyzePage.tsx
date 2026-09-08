@@ -1,13 +1,101 @@
-import { Search } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { Search, Loader2, AlertTriangle, CheckCircle, XCircle, Minus, Trash2, Clock, FlaskConical } from 'lucide-react';
+import { analyzeText, type AnalyzeResponse } from '../../../services/api';
+import axios from 'axios';
+
+const MIN_LENGTH = 10;
+const MAX_LENGTH = 50_000;
+
+type TabId = 'text' | 'url' | 'image';
+const TABS: { id: TabId; label: string; disabled: boolean }[] = [
+  { id: 'text', label: 'Text', disabled: false },
+  { id: 'url', label: 'URL', disabled: true },
+  { id: 'image', label: 'Image', disabled: true },
+];
+
+/**
+ * Extract a user-friendly error message from an Axios error or generic Error.
+ */
+function getErrorMessage(error: unknown): string {
+  if (axios.isAxiosError(error)) {
+    if (error.code === 'ECONNABORTED') {
+      return 'Request timed out. The server may be busy — please try again.';
+    }
+    if (!error.response) {
+      return 'Unable to reach the server. Make sure the backend is running.';
+    }
+
+    const status = error.response.status;
+    const data = error.response.data as Record<string, unknown> | undefined;
+
+    // FastAPI validation errors
+    if (status === 422 && data?.detail) {
+      const detail = data.detail;
+      if (Array.isArray(detail)) {
+        return detail
+          .map((d: Record<string, unknown>) => String(d.msg ?? ''))
+          .filter(Boolean)
+          .join('; ') || 'Validation error — check your input.';
+      }
+      return String(detail);
+    }
+
+    if (data?.detail && typeof data.detail === 'string') {
+      return data.detail;
+    }
+
+    if (status === 500) return 'Internal server error. Please try again later.';
+    if (status === 503) return 'Service unavailable. The model may still be loading.';
+    return `Request failed (HTTP ${status}).`;
+  }
+
+  if (error instanceof Error) return error.message;
+  return 'An unexpected error occurred.';
+}
 
 export default function AnalyzePage() {
+  const [activeTab] = useState<TabId>('text');
+  const [text, setText] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [result, setResult] = useState<AnalyzeResponse | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const charCount = text.length;
+  const isTooShort = charCount > 0 && charCount < MIN_LENGTH;
+  const isTooLong = charCount > MAX_LENGTH;
+  const canSubmit = charCount >= MIN_LENGTH && charCount <= MAX_LENGTH && !isLoading;
+
+  const handleAnalyze = useCallback(async () => {
+    if (!canSubmit) return;
+
+    setIsLoading(true);
+    setErrorMessage(null);
+
+    try {
+      const response = await analyzeText(text);
+      setResult(response);
+    } catch (err: unknown) {
+      setErrorMessage(getErrorMessage(err));
+      // Keep previous results visible on error
+    } finally {
+      setIsLoading(false);
+    }
+  }, [text, canSubmit]);
+
+  const handleClear = useCallback(() => {
+    setText('');
+    setResult(null);
+    setErrorMessage(null);
+  }, []);
+
   return (
     <div>
       <h1 style={{ marginBottom: 'var(--space-2)' }}>Analyze Content</h1>
       <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--space-8)' }}>
-        Enter text, a URL, or upload an image to detect fake news and analyze sentiment.
+        Enter text to detect fake news and analyze sentiment.
       </p>
 
+      {/* ── Input Card ── */}
       <div style={{
         background: 'var(--bg-card)',
         border: '1px solid var(--border-color)',
@@ -22,35 +110,59 @@ export default function AnalyzePage() {
           borderBottom: '1px solid var(--border-color)',
           paddingBottom: 'var(--space-3)',
         }}>
-          {['Text', 'URL', 'Image'].map((tab, i) => (
+          {TABS.map((tab) => (
             <button
-              key={tab}
+              key={tab.id}
+              disabled={tab.disabled}
+              aria-selected={activeTab === tab.id}
+              role="tab"
               style={{
                 padding: 'var(--space-2) var(--space-4)',
                 borderRadius: 'var(--radius-md)',
                 fontSize: 'var(--text-sm)',
-                fontWeight: i === 0 ? 'var(--font-semibold)' : 'var(--font-normal)',
-                color: i === 0 ? 'var(--color-primary-400)' : 'var(--text-secondary)',
-                background: i === 0 ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
+                fontWeight: activeTab === tab.id ? 'var(--font-semibold)' : 'var(--font-normal)',
+                color: tab.disabled
+                  ? 'var(--text-muted)'
+                  : activeTab === tab.id
+                    ? 'var(--color-primary-400)'
+                    : 'var(--text-secondary)',
+                background: activeTab === tab.id ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
                 border: 'none',
-                cursor: 'pointer',
+                cursor: tab.disabled ? 'not-allowed' : 'pointer',
+                opacity: tab.disabled ? 0.5 : 1,
+                transition: 'all var(--transition-fast)',
               }}
             >
-              {tab}
+              {tab.label}
+              {tab.disabled && (
+                <span style={{
+                  marginLeft: 'var(--space-1)',
+                  fontSize: 'var(--text-xs)',
+                  opacity: 0.7,
+                }}>
+                  (soon)
+                </span>
+              )}
             </button>
           ))}
         </div>
 
         {/* Text input */}
         <textarea
+          id="analyze-text-input"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
           placeholder="Enter or paste the text you want to analyze..."
           aria-label="Text to analyze"
+          aria-describedby="char-count-info"
+          maxLength={MAX_LENGTH}
           rows={8}
+          disabled={isLoading}
           style={{
             width: '100%',
             padding: 'var(--space-4)',
             background: 'var(--bg-elevated)',
-            border: '1px solid var(--border-color)',
+            border: `1px solid ${isTooLong ? 'var(--color-fake)' : 'var(--border-color)'}`,
             borderRadius: 'var(--radius-md)',
             color: 'var(--text-primary)',
             fontSize: 'var(--text-sm)',
@@ -58,65 +170,516 @@ export default function AnalyzePage() {
             outline: 'none',
             fontFamily: 'var(--font-sans)',
             lineHeight: 'var(--leading-normal)',
+            transition: 'border-color var(--transition-fast)',
+            opacity: isLoading ? 0.6 : 1,
           }}
         />
 
+        {/* Character count & validation */}
+        <div
+          id="char-count-info"
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginTop: 'var(--space-2)',
+            fontSize: 'var(--text-xs)',
+          }}
+        >
+          <span style={{
+            color: isTooShort
+              ? 'var(--color-uncertain)'
+              : isTooLong
+                ? 'var(--color-fake)'
+                : 'var(--text-muted)',
+          }}>
+            {isTooShort && `Minimum ${MIN_LENGTH} characters required`}
+            {isTooLong && `Maximum ${MAX_LENGTH.toLocaleString()} characters exceeded`}
+          </span>
+          <span style={{
+            color: isTooLong
+              ? 'var(--color-fake)'
+              : 'var(--text-muted)',
+          }}>
+            {charCount.toLocaleString()} / {MAX_LENGTH.toLocaleString()}
+          </span>
+        </div>
+
+        {/* Actions row */}
         <div style={{
           display: 'flex',
-          justifyContent: 'space-between',
+          justifyContent: 'flex-end',
           alignItems: 'center',
+          gap: 'var(--space-3)',
           marginTop: 'var(--space-4)',
         }}>
-          <div style={{ display: 'flex', gap: 'var(--space-4)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer' }}>
-              <input type="checkbox" defaultChecked /> Explanation
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer' }}>
-              <input type="checkbox" /> Summary
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer' }}>
-              <input type="checkbox" /> Translation
-            </label>
-          </div>
+          {/* Clear button */}
+          {(charCount > 0 || result || errorMessage) && (
+            <button
+              onClick={handleClear}
+              disabled={isLoading}
+              aria-label="Clear input and results"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-2)',
+                padding: 'var(--space-3) var(--space-5)',
+                background: 'transparent',
+                color: 'var(--text-secondary)',
+                borderRadius: 'var(--radius-md)',
+                fontWeight: 'var(--font-medium)',
+                fontSize: 'var(--text-sm)',
+                cursor: isLoading ? 'not-allowed' : 'pointer',
+                border: '1px solid var(--border-color)',
+                transition: 'all var(--transition-fast)',
+                opacity: isLoading ? 0.5 : 1,
+              }}
+            >
+              <Trash2 size={15} />
+              Clear
+            </button>
+          )}
 
+          {/* Analyze button */}
           <button
+            onClick={handleAnalyze}
+            disabled={!canSubmit}
+            aria-label={isLoading ? 'Analyzing text, please wait' : 'Analyze text'}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: 'var(--space-2)',
               padding: 'var(--space-3) var(--space-6)',
-              background: 'linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700))',
-              color: 'white',
+              background: canSubmit
+                ? 'linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700))'
+                : 'var(--bg-elevated)',
+              color: canSubmit ? 'white' : 'var(--text-muted)',
               borderRadius: 'var(--radius-md)',
               fontWeight: 'var(--font-semibold)',
               fontSize: 'var(--text-sm)',
-              cursor: 'pointer',
+              cursor: canSubmit ? 'pointer' : 'not-allowed',
               border: 'none',
+              transition: 'all var(--transition-fast)',
+              opacity: isLoading ? 0.85 : 1,
+              boxShadow: canSubmit ? 'var(--shadow-glow)' : 'none',
             }}
           >
-            <Search size={16} />
-            Analyze
+            {isLoading ? (
+              <>
+                <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                Analyzing…
+              </>
+            ) : (
+              <>
+                <Search size={16} />
+                Analyze
+              </>
+            )}
           </button>
         </div>
       </div>
 
-      {/* Results placeholder */}
+      {/* ── Error Message ── */}
+      {errorMessage && (
+        <div
+          role="alert"
+          style={{
+            marginTop: 'var(--space-6)',
+            padding: 'var(--space-4) var(--space-5)',
+            background: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            borderRadius: 'var(--radius-lg)',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 'var(--space-3)',
+          }}
+        >
+          <AlertTriangle
+            size={18}
+            style={{ color: 'var(--color-fake)', flexShrink: 0, marginTop: '2px' }}
+          />
+          <div>
+            <p style={{
+              color: 'var(--color-fake)',
+              fontWeight: 'var(--font-semibold)',
+              fontSize: 'var(--text-sm)',
+              marginBottom: 'var(--space-1)',
+            }}>
+              Analysis Failed
+            </p>
+            <p style={{
+              color: 'var(--text-secondary)',
+              fontSize: 'var(--text-sm)',
+            }}>
+              {errorMessage}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Loading Indicator ── */}
+      {isLoading && (
+        <div style={{
+          marginTop: 'var(--space-8)',
+          padding: 'var(--space-12)',
+          textAlign: 'center',
+          border: '2px dashed var(--border-color)',
+          borderRadius: 'var(--radius-xl)',
+        }}>
+          <Loader2
+            size={48}
+            style={{
+              margin: '0 auto var(--space-4)',
+              color: 'var(--color-primary-400)',
+              animation: 'spin 1s linear infinite',
+            }}
+          />
+          <p style={{
+            fontSize: 'var(--text-lg)',
+            fontWeight: 'var(--font-medium)',
+            color: 'var(--text-primary)',
+          }}>
+            Analyzing your text…
+          </p>
+          <p style={{
+            fontSize: 'var(--text-sm)',
+            color: 'var(--text-muted)',
+            marginTop: 'var(--space-2)',
+          }}>
+            This may take up to two minutes on CPU inference.
+          </p>
+        </div>
+      )}
+
+      {/* ── Results Dashboard ── */}
+      {result && !isLoading && (
+        <div style={{
+          marginTop: 'var(--space-8)',
+          display: 'grid',
+          gap: 'var(--space-6)',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+        }}>
+          {/* Credibility Card */}
+          <CredibilityCard
+            label={result.credibility.label}
+            confidence={result.credibility.confidence}
+            isMock={result.credibility.is_mock}
+          />
+
+          {/* Sentiment Card */}
+          <SentimentCard
+            label={result.sentiment.label}
+            confidence={result.sentiment.confidence}
+            isMock={result.sentiment.is_mock}
+          />
+
+          {/* Processing Time */}
+          <div style={{
+            gridColumn: '1 / -1',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 'var(--space-2)',
+            padding: 'var(--space-3)',
+            fontSize: 'var(--text-xs)',
+            color: 'var(--text-muted)',
+          }}>
+            <Clock size={13} />
+            Processed in {formatProcessingTime(result.processing_time_ms)}
+          </div>
+        </div>
+      )}
+
+      {/* ── Empty State ── */}
+      {!result && !isLoading && (
+        <div style={{
+          marginTop: 'var(--space-8)',
+          padding: 'var(--space-12)',
+          textAlign: 'center',
+          color: 'var(--text-muted)',
+          border: '2px dashed var(--border-color)',
+          borderRadius: 'var(--radius-xl)',
+        }}>
+          <Search size={48} style={{ margin: '0 auto var(--space-4)', opacity: 0.3 }} />
+          <p style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-medium)' }}>
+            Results will appear here
+          </p>
+          <p style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-2)' }}>
+            Enter text and click Analyze to get started
+          </p>
+        </div>
+      )}
+
+      {/* Keyframes for the spinner */}
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ── Sub-components ──
+
+function CredibilityCard({
+  label,
+  confidence,
+  isMock,
+}: {
+  label: 'Real' | 'Fake';
+  confidence: number;
+  isMock: boolean;
+}) {
+  const isReal = label === 'Real';
+  const color = isReal ? 'var(--color-real)' : 'var(--color-fake)';
+  const bgTint = isReal ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)';
+  const borderTint = isReal ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)';
+  const Icon = isReal ? CheckCircle : XCircle;
+  const pct = (confidence * 100).toFixed(1);
+
+  return (
+    <div style={{
+      background: 'var(--bg-card)',
+      border: `1px solid ${borderTint}`,
+      borderRadius: 'var(--radius-xl)',
+      padding: 'var(--space-6)',
+      position: 'relative',
+      overflow: 'hidden',
+    }}>
+      {/* Subtle colored top accent */}
       <div style={{
-        marginTop: 'var(--space-8)',
-        padding: 'var(--space-12)',
-        textAlign: 'center',
-        color: 'var(--text-muted)',
-        border: '2px dashed var(--border-color)',
-        borderRadius: 'var(--radius-xl)',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '3px',
+        background: color,
+      }} />
+
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 'var(--space-3)',
+        marginBottom: 'var(--space-5)',
       }}>
-        <Search size={48} style={{ margin: '0 auto var(--space-4)', opacity: 0.3 }} />
-        <p style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--font-medium)' }}>
-          Results will appear here
-        </p>
-        <p style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-2)' }}>
-          Enter text and click Analyze to get started
-        </p>
+        <span style={{
+          fontSize: 'var(--text-xs)',
+          fontWeight: 'var(--font-semibold)',
+          textTransform: 'uppercase' as const,
+          letterSpacing: '0.05em',
+          color: 'var(--text-muted)',
+        }}>
+          Credibility
+        </span>
+        {isMock && <MockBadge />}
+      </div>
+
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 'var(--space-4)',
+        marginBottom: 'var(--space-4)',
+      }}>
+        <div style={{
+          width: '48px',
+          height: '48px',
+          borderRadius: 'var(--radius-lg)',
+          background: bgTint,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          <Icon size={26} style={{ color }} />
+        </div>
+        <div>
+          <p style={{
+            fontSize: 'var(--text-2xl)',
+            fontWeight: 'var(--font-bold)',
+            color,
+            lineHeight: 'var(--leading-tight)',
+          }}>
+            {label}
+          </p>
+          <p style={{
+            fontSize: 'var(--text-sm)',
+            color: 'var(--text-secondary)',
+          }}>
+            {pct}% confidence
+          </p>
+        </div>
+      </div>
+
+      {/* Confidence bar */}
+      <div style={{
+        height: '6px',
+        borderRadius: 'var(--radius-full)',
+        background: 'var(--bg-elevated)',
+        overflow: 'hidden',
+      }}>
+        <div style={{
+          height: '100%',
+          width: `${Math.min(confidence * 100, 100)}%`,
+          borderRadius: 'var(--radius-full)',
+          background: color,
+          transition: 'width 0.6s ease',
+        }} />
       </div>
     </div>
   );
+}
+
+function SentimentCard({
+  label,
+  confidence,
+  isMock,
+}: {
+  label: 'Positive' | 'Negative' | 'Neutral';
+  confidence: number;
+  isMock: boolean;
+}) {
+  const colorMap: Record<string, string> = {
+    Positive: 'var(--color-positive)',
+    Negative: 'var(--color-negative)',
+    Neutral: 'var(--color-neutral)',
+  };
+  const bgMap: Record<string, string> = {
+    Positive: 'rgba(16, 185, 129, 0.08)',
+    Negative: 'rgba(239, 68, 68, 0.08)',
+    Neutral: 'rgba(107, 114, 128, 0.08)',
+  };
+  const borderMap: Record<string, string> = {
+    Positive: 'rgba(16, 185, 129, 0.25)',
+    Negative: 'rgba(239, 68, 68, 0.25)',
+    Neutral: 'rgba(107, 114, 128, 0.25)',
+  };
+  const iconMap: Record<string, typeof CheckCircle> = {
+    Positive: CheckCircle,
+    Negative: XCircle,
+    Neutral: Minus,
+  };
+
+  const color = colorMap[label];
+  const bgTint = bgMap[label];
+  const borderTint = borderMap[label];
+  const Icon = iconMap[label];
+  const pct = (confidence * 100).toFixed(1);
+
+  return (
+    <div style={{
+      background: 'var(--bg-card)',
+      border: `1px solid ${borderTint}`,
+      borderRadius: 'var(--radius-xl)',
+      padding: 'var(--space-6)',
+      position: 'relative',
+      overflow: 'hidden',
+    }}>
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '3px',
+        background: color,
+      }} />
+
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 'var(--space-3)',
+        marginBottom: 'var(--space-5)',
+      }}>
+        <span style={{
+          fontSize: 'var(--text-xs)',
+          fontWeight: 'var(--font-semibold)',
+          textTransform: 'uppercase' as const,
+          letterSpacing: '0.05em',
+          color: 'var(--text-muted)',
+        }}>
+          Sentiment
+        </span>
+        {isMock && <MockBadge />}
+      </div>
+
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 'var(--space-4)',
+        marginBottom: 'var(--space-4)',
+      }}>
+        <div style={{
+          width: '48px',
+          height: '48px',
+          borderRadius: 'var(--radius-lg)',
+          background: bgTint,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          <Icon size={26} style={{ color }} />
+        </div>
+        <div>
+          <p style={{
+            fontSize: 'var(--text-2xl)',
+            fontWeight: 'var(--font-bold)',
+            color,
+            lineHeight: 'var(--leading-tight)',
+          }}>
+            {label}
+          </p>
+          <p style={{
+            fontSize: 'var(--text-sm)',
+            color: 'var(--text-secondary)',
+          }}>
+            {pct}% confidence
+          </p>
+        </div>
+      </div>
+
+      <div style={{
+        height: '6px',
+        borderRadius: 'var(--radius-full)',
+        background: 'var(--bg-elevated)',
+        overflow: 'hidden',
+      }}>
+        <div style={{
+          height: '100%',
+          width: `${Math.min(confidence * 100, 100)}%`,
+          borderRadius: 'var(--radius-full)',
+          background: color,
+          transition: 'width 0.6s ease',
+        }} />
+      </div>
+    </div>
+  );
+}
+
+function MockBadge() {
+  return (
+    <span
+      title="This result was generated by a mock/fallback model, not the production model."
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '4px',
+        fontSize: 'var(--text-xs)',
+        fontWeight: 'var(--font-medium)',
+        color: 'var(--color-uncertain)',
+        background: 'rgba(245, 158, 11, 0.12)',
+        padding: '2px 8px',
+        borderRadius: 'var(--radius-full)',
+        border: '1px solid rgba(245, 158, 11, 0.3)',
+        cursor: 'help',
+      }}
+    >
+      <FlaskConical size={11} />
+      Mock
+    </span>
+  );
+}
+
+function formatProcessingTime(ms: number): string {
+  if (ms < 1000) return `${Math.round(ms)} ms`;
+  return `${(ms / 1000).toFixed(2)} s`;
 }

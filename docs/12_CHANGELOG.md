@@ -23,38 +23,63 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 
 - Complete documentation suite (19 documents + AI context file)
-  - Project Vision (`00_PROJECT_VISION.md`)
-  - System Architecture (`01_ARCHITECTURE.md`)
-  - Technology Stack (`02_TECH_STACK.md`)
-  - Development Roadmap (`03_DEVELOPMENT_ROADMAP.md`)
-  - Database Design (`04_DATABASE_DESIGN.md`)
-  - API Specification (`05_API_SPECIFICATION.md`)
-  - AI Pipeline (`06_AI_PIPELINE.md`)
-  - UI/UX Design (`07_UI_UX_DESIGN.md`)
-  - Coding Guidelines (`08_CODING_GUIDELINES.md`)
-  - Progress Log (`09_PROGRESS_LOG.md`)
-  - Technical Decisions (`10_TECHNICAL_DECISIONS.md`)
-  - Backlog (`11_BACKLOG.md`)
-  - Changelog (`12_CHANGELOG.md`)
-  - Deployment Plan (`13_DEPLOYMENT_PLAN.md`)
-  - Testing Strategy (`14_TESTING_STRATEGY.md`)
-  - Security Plan (`15_SECURITY_PLAN.md`)
-  - Risk Analysis (`16_RISK_ANALYSIS.md`)
-  - Folder Structure (`17_FOLDER_STRUCTURE.md`)
-  - Project Timeline (`18_PROJECT_TIMELINE.md`)
+  - Project Vision, Architecture, Tech Stack, Development Roadmap
+  - Database Design, API Specification, AI Pipeline, UI/UX Design
+  - Coding Guidelines, Progress Log, Technical Decisions, Backlog
+  - Changelog, Deployment Plan, Testing Strategy, Security Plan
+  - Risk Analysis, Folder Structure, Project Timeline
   - AI Context (`docs/prompts/ai_context.md`)
+
+#### Sprint 2b — API Hardening (2026-08-21)
+- AI session quick-start guide (`docs/prompts/START_HERE.md`)
+- AI coding/doc rules (`docs/prompts/AI_RULES.md`)
+- Sprint definition document (`docs/phases/phase-01/CURRENT_SPRINT.md`)
+- Input validation test suite (`test_analysis_validation.py`, 8 tests)
+
+#### Sprint 3 — Model Training & Integration (2026-09-08)
+- Trained XLM-RoBERTa fake news detection model on Google Colab (98.39% accuracy, 98.39% F1)
+- Trained XLM-RoBERTa sentiment analysis model on Google Colab (97.95% accuracy, 97.94% F1)
+- Model weights: `models/fake_news_model/`, `models/sentiment_model/`
+- Colab training scripts: `notebooks/03_train_fake_news.py`, `notebooks/04_train_sentiment.py`
+
+#### Sprint 4 — Frontend Text Analysis (2026-09-08)
+- TypeScript API types: `AnalyzeRequest`, `CredibilityResult`, `SentimentResult`, `AnalyzeResponse`
+- `analyzeText()` API function calling `POST /api/v1/analyze/text`
+- Functional Analyze page with controlled textarea, validation, loading state, error handling
+- Results dashboard with Credibility and Sentiment cards, confidence bars, mock badges
+- Character count, Clear button, processing time display
+- Configured FastAPI backend `cors_origins` to include `http://127.0.0.1:5173` and `http://127.0.0.1:3000`
+- Aligned frontend default `API_BASE_URL` to `http://127.0.0.1:8000`
+- Fixed `vite.config.ts` Vitest configuration typing via `vitest/config` import
 
 ### Changed
 
-- Nothing yet
+#### Sprint 2b — API Hardening (2026-08-21)
+- `analysis/router.py` — Pydantic V2 models, `is_mock` flag, `processing_time_ms`, structured errors
+- `analysis/services.py` — async with structlog logging and per-model timing telemetry
+- `detection/model.py` — replaced `print()` with structlog, added `ModelStatus` enum, `PredictionResult` dataclass
+- `sentiment/model.py` — same structlog/types improvements as detection model
+- `ai_context.md` — complete rewrite to remove false state claims
+
+#### Sprint 3 — Model Integration (2026-09-08)
+- `detection/model.py` — fixed model path to resolve from project root (models now load as real, not mock)
+- `sentiment/model.py` — fixed model path + corrected `CLASS_MAP` to match training labels
+- `analysis/router.py` — minor adjustments for real model support
+
+#### Sprint 4 — Connection & Config Alignment (2026-09-08)
+- `backend/app/config.py` — added `http://127.0.0.1:5173` and `http://127.0.0.1:3000` to default `cors_origins`
+- `frontend/src/services/api.ts` — updated fallback `API_BASE_URL` to `http://127.0.0.1:8000`
+- `frontend/vite.config.ts` — updated dev proxy target to `http://127.0.0.1:8000` and imported `defineConfig` from `vitest/config`
+- `.env.example` — updated `CORS_ORIGINS` and `VITE_API_BASE_URL` defaults
+
+#### Sprint 4 — Frontend (2026-09-08)
+- `api.ts` — Axios timeout increased from 30s to 120s for CPU inference (~68s)
+- `AnalyzePage.tsx` — converted from static placeholder to functional component (123 → 686 lines)
 
 ### Fixed
 
-- Nothing yet
-
-### Removed
-
-- Nothing yet
+- Sentiment label mapping mismatch between training and backend `CLASS_MAP`
+- HuggingFace download delay on first request (resolved: models are now local)
 
 ---
 

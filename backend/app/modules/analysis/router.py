@@ -30,11 +30,18 @@ class AnalyzeRequest(BaseModel):
         min_length=10,
         max_length=50_000,
         description="The text to analyze (10–50,000 characters).",
-        examples=["Breaking news: Scientists discover new method for detecting misinformation."],
+        examples=[
+            "Breaking news: Scientists discover new method "
+            "for detecting misinformation."
+        ],
     )
+
     language: str = Field(
         default="auto",
-        description="ISO 639-1 language code, or 'auto' for automatic detection.",
+        description=(
+            "ISO 639-1 language code, or 'auto' "
+            "for automatic language detection."
+        ),
         examples=["auto", "en", "hi"],
     )
 
@@ -47,6 +54,7 @@ class CredibilityResult(BaseModel):
         description="Classification label: 'Fake' or 'Real'.",
         examples=["Real"],
     )
+
     confidence: float = Field(
         ...,
         ge=0.0,
@@ -54,9 +62,12 @@ class CredibilityResult(BaseModel):
         description="Model confidence score (0.0–1.0).",
         examples=[0.95],
     )
+
     is_mock: bool = Field(
         default=False,
-        description="True if result is from mock model (model not yet trained).",
+        description=(
+            "True if the result comes from the mock fallback model."
+        ),
     )
 
 
@@ -65,9 +76,12 @@ class SentimentResult(BaseModel):
 
     label: str = Field(
         ...,
-        description="Sentiment label: 'Positive', 'Negative', or 'Neutral'.",
+        description=(
+            "Sentiment label: 'Positive', 'Negative', or 'Neutral'."
+        ),
         examples=["Negative"],
     )
+
     confidence: float = Field(
         ...,
         ge=0.0,
@@ -75,9 +89,12 @@ class SentimentResult(BaseModel):
         description="Model confidence score (0.0–1.0).",
         examples=[0.88],
     )
+
     is_mock: bool = Field(
         default=False,
-        description="True if result is from mock model (model not yet trained).",
+        description=(
+            "True if the result comes from the mock fallback model."
+        ),
     )
 
 
@@ -85,7 +102,9 @@ class AnalyzeResponse(BaseModel):
     """Response body for text analysis."""
 
     credibility: CredibilityResult
+
     sentiment: SentimentResult
+
     processing_time_ms: float = Field(
         ...,
         description="Total processing time in milliseconds.",
@@ -114,8 +133,12 @@ _analysis_service = AnalysisService()
     status_code=status.HTTP_200_OK,
     summary="Analyze text for fake news and sentiment",
     responses={
-        422: {"description": "Validation error (text too short/long)"},
-        500: {"description": "Internal analysis error"},
+        422: {
+            "description": "Validation error (text too short/long)"
+        },
+        500: {
+            "description": "Internal analysis error"
+        },
     },
 )
 async def analyze_text(request: AnalyzeRequest) -> AnalyzeResponse:
@@ -124,6 +147,7 @@ async def analyze_text(request: AnalyzeRequest) -> AnalyzeResponse:
     Runs the input text through both the fake news detection model
     and the sentiment analysis model, returning combined results.
     """
+
     start_time = time.perf_counter()
 
     logger.info(
@@ -133,19 +157,26 @@ async def analyze_text(request: AnalyzeRequest) -> AnalyzeResponse:
     )
 
     try:
-        results = await _analysis_service.analyze_text(request.text)
+        results = await _analysis_service.analyze_text(
+            request.text
+        )
+
     except Exception as exc:
         logger.error(
             "analysis_failed",
             error=str(exc),
             text_length=len(request.text),
         )
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Analysis failed. Please try again.",
         ) from exc
 
-    elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)
+    elapsed_ms = round(
+        (time.perf_counter() - start_time) * 1000,
+        2,
+    )
 
     logger.info(
         "analysis_complete",

@@ -167,6 +167,36 @@
 
 ---
 
+### ADR-011: 120s Frontend API Timeout for CPU Inference
+
+| Field                  | Detail                                                              |
+| ---------------------- | ------------------------------------------------------------------- |
+| **Date**               | 2026-09-08                                                          |
+| **Status**             | Accepted                                                            |
+| **Problem**            | XLM-RoBERTa CPU inference takes ~65–68 seconds per request. The default 30s Axios timeout causes premature request failures in the browser. |
+| **Options Considered** | 1. Increase timeout to 120s 2. Add async job queue (submit → poll) 3. Optimize with ONNX Runtime first |
+| **Chosen Solution**    | Increase Axios timeout to 120,000ms                                 |
+| **Reason**             | Simplest solution for the current dev phase. Async job queue adds significant backend complexity. ONNX optimization is planned for Phase 5 but not yet implemented. 120s provides sufficient margin (~2× the actual inference time). |
+| **Impact**             | Frontend waits up to 2 minutes; loading UI shows "This may take up to two minutes on CPU inference" to set user expectations. |
+| **Future Considerations** | When ONNX optimization reduces inference to <5s, reduce timeout back to 30s. If concurrent users cause timeouts, implement async job queue pattern. |
+
+---
+
+### ADR-012: Dual Dev Origins (localhost & 127.0.0.1) and API Base URL Alignment
+
+| Field                  | Detail                                                              |
+| ---------------------- | ------------------------------------------------------------------- |
+| **Date**               | 2026-09-08                                                          |
+| **Status**             | Accepted                                                            |
+| **Problem**            | Browser considers `http://localhost` and `http://127.0.0.1` distinct cross-origin domains. With `withCredentials: true`, FastAPI's CORSMiddleware rejected requests from `http://127.0.0.1:5173` because only `localhost` was configured in allowed origins, resulting in Axios network errors displaying as "Unable to reach the server". |
+| **Options Considered** | 1. Force users to only use `http://localhost:5173` 2. Add both `localhost` and `127.0.0.1` variants (ports 3000 and 5173) to backend default CORS origins and align frontend default `API_BASE_URL` to `http://127.0.0.1:8000` |
+| **Chosen Solution**    | Option 2: Support both `localhost` and `127.0.0.1` on ports 3000 and 5173 in backend settings, and standardize frontend local API base URL to `http://127.0.0.1:8000`. |
+| **Reason**             | Eliminates origin mismatch friction regardless of whether the developer navigates to `127.0.0.1` or `localhost`, while adhering to strict origin matching required by credentialed CORS requests. |
+| **Impact**             | Frontend seamlessly connects to FastAPI whether accessed via `http://127.0.0.1:5173` or `http://localhost:5173`. No runtime errors or CORS preflight failures. |
+| **Future Considerations** | Production deployment uses reverse proxy (nginx) serving both frontend and backend under the same origin, eliminating CORS entirely in production. |
+
+---
+
 ## Template for New Decisions
 
 ```markdown

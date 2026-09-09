@@ -17,33 +17,28 @@ Codename: **VeritasAI**. Solo-developer FYP. 16-week timeline.
 
 ## Current State
 
-- **Phase**: 1 — Core AI Pipeline
-- **Sprint**: 3 (Colab scripts ready, awaiting user training)
-- **Status**: Training scripts created. User needs to run on Colab with GPU.
-- **Next**: User runs training on Colab → downloads weights → API uses real predictions
+- **Phase**: 3 — Core Platform Features
+- **Milestone**: 3.4 — URL Analysis (Implemented & Verified, awaiting review)
+- **Status**: Multi-layer SSRF defense active (DNS resolution, private/loopback/link-local/carrier-grade IP blocking, independent redirect destination validation, size caps); safe HTTP streaming; BeautifulSoup article text and metadata extraction; XLM-RoBERTa real model inference; user-scoped history persistence with `source_url` and `title`; frontend dual Text/URL Analyze page live. 79/79 backend tests and frontend build passing. Uncommitted in working tree alongside Milestones 3.2 and 3.3.
+- **Next**: Milestone 3.5 — LIME / SHAP Explainability
 
 ## Completed Work
 
 ### Phase 0 — Foundation (Sprint 1)
 - Monorepo structure, FastAPI + React scaffolding, Docker Compose, CI/CD, pre-commit
 
-### Phase 1 — Sprint 2
-- Created prompt docs, hardened analysis API, expanded tests to 20
-- All code uses structlog, type annotations, Pydantic V2
+### Phase 1 — AI Inference Pipeline (Sprint 2-3)
+- Models trained on Colab (Fake News: 98.39%, Sentiment: 97.95%) and integrated into backend
+- `POST /api/v1/analyze/text` running real XLM-RoBERTa inference
 
-### Phase 1 — Sprint 3
-- Created `notebooks/03_train_fake_news.py` — Colab training script for binary Fake/Real classification
-- Created `notebooks/04_train_sentiment.py` — Colab training script with 6-emotion → 3-sentiment mapping
-- Fixed backend sentiment label mapping to match training (0=Negative, 1=Positive, 2=Neutral)
-- Key finding: Dataset has 6 emotions (sadness, joy, love, anger, fear, surprise), mapped to 3 sentiments
+### Phase 2 — Frontend Integration (Sprint 4)
+- React text analysis page connected end-to-end with real predictions, confidence scores, and latency display
 
-## Current Task
-
-- **User action**: Run training scripts on Google Colab
-  1. Upload datasets to Colab/Google Drive
-  2. Run `03_train_fake_news.py` (~45 min on T4 GPU)
-  3. Run `04_train_sentiment.py` (~20 min on T4 GPU)
-  4. Download `fake_news_model/` and `sentiment_model/` to `models/`
+### Phase 3 — Core Platform Features
+- **Milestone 3.1 (History)**: `AnalysisResult` SQLAlchemy model, Alembic migration, `history_router` with pagination & soft deletion, interactive `HistoryPage.tsx` with modal & delete. (Committed & pushed: `2cd5bcd`)
+- **Milestone 3.2 (Dashboard)**: `dashboard_router` with `GET /api/v1/dashboard/summary`, SQL aggregations, `DashboardPage.tsx` with KPI cards, dual-segment credibility ratio bar, three-segment sentiment spectrum bar, language breakdown, recent analyses, inspection modal. (Implemented & verified, uncommitted)
+- **Milestone 3.3 (Authentication)**: `User` model, Alembic migration with FK to `analysis_results`, `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`, `GET /auth/me`, JWT + bcrypt security, `get_current_user` and `get_optional_user` dependencies, strict IDOR prevention on history & dashboard, React auth store with auto-refresh/interceptors, protected routes (`/analyze`, `/history`, `/dashboard`), guest routes (`/login`, `/register`), user badge & logout dropdown. (Implemented & verified, uncommitted)
+- **Milestone 3.4 (URL Analysis)**: `backend/app/modules/url_analysis/` module with `POST /api/v1/analyze/url`, multi-layer SSRF defenses (`security.py`), safe HTTP streaming fetcher with independent redirect hop validation, BeautifulSoup article extraction, Alembic migration adding `source_url` and `title`, user-scoped history integration, frontend Analyze URL tab with metadata banner, 45 unit/integration tests (79 total suite). (Implemented & verified, uncommitted)
 
 ## Folder Structure
 
@@ -63,11 +58,21 @@ veritasai/
 
 ## Key Endpoints
 
-| Method | Path                      | Auth   | Status |
-| ------ | ------------------------- | ------ | ------ |
-| GET    | /health                   | Public | ✅ Working |
-| GET    | /health/ready             | Public | ✅ Working |
-| POST   | /api/v1/analyze/text      | Public | ✅ Working (mock) |
+| Method | Path                      | Auth    | Status |
+| ------ | ------------------------- | ------- | ------ |
+| GET    | /health                   | Public  | ✅ Working |
+| GET    | /health/ready             | Public  | ✅ Working |
+| POST   | /api/v1/auth/register     | Public  | ✅ Working (201) |
+| POST   | /api/v1/auth/login        | Public  | ✅ Working (200) |
+| POST   | /api/v1/auth/refresh      | Public  | ✅ Working (200) |
+| POST   | /api/v1/auth/logout       | Bearer  | ✅ Working (200) |
+| GET    | /api/v1/auth/me           | Bearer  | ✅ Working (200) |
+| POST   | /api/v1/analyze/text      | Optional| ✅ Working (real model) |
+| POST   | /api/v1/analyze/url       | Bearer  | ✅ Working (SSRF-protected) |
+| GET    | /api/v1/history           | Bearer  | ✅ Working (user-scoped) |
+| GET    | /api/v1/history/{id}      | Bearer  | ✅ Working (ownership check) |
+| DELETE | /api/v1/history/{id}      | Bearer  | ✅ Working (ownership check) |
+| GET    | /api/v1/dashboard/summary | Bearer  | ✅ Working (user-scoped) |
 
 ## Rules
 
@@ -91,14 +96,15 @@ veritasai/
 | 4 | PostgreSQL | Relational + JSONB; free tier on Supabase |
 | 5 | XLM-RoBERTa | Best cross-lingual transfer; 100 languages |
 | 6 | LIME (primary XAI) | Model-agnostic; intuitive for users |
-| 7 | Mock fallback | Models return mock data until trained — `is_mock` flag in API response |
+| 7 | Mock fallback | Models return mock data if uninstantiated — `is_mock` flag in API response |
+| 8 | Server-Side Dashboard Aggregations | Perform counts & averages via SQL in PostgreSQL rather than sending raw rows to client |
+| 9 | JWT + IDOR Prevention | Stateless access tokens (15m), refresh tokens (7d), strict server-side `user_id` filtering |
 
 ## Known Issues
 
-- No trained models — API returns mock predictions with `is_mock: true`
-- First request is slow (~90s cold start) due to torch/transformers import
+- First request is slow (~30s cold start) due to PyTorch/transformers model weight initialization
 - No git tags yet (v0.1.0-foundation not created)
-- Docker Compose not verified end-to-end
+- Docker Compose not verified end-to-end with local GPU/CPU model mounts
 
 ## Documentation Map
 

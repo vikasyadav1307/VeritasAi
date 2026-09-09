@@ -195,6 +195,45 @@
 | **Impact**             | Frontend seamlessly connects to FastAPI whether accessed via `http://127.0.0.1:5173` or `http://localhost:5173`. No runtime errors or CORS preflight failures. |
 | **Future Considerations** | Production deployment uses reverse proxy (nginx) serving both frontend and backend under the same origin, eliminating CORS entirely in production. |
 
+### ADR-011: Server-Side Database Aggregations for Analytics Dashboard
+
+| Field                  | Detail                                                              |
+| ---------------------- | ------------------------------------------------------------------- |
+| **Date**               | 2026-09-08                                                          |
+| **Status**             | Accepted                                                            |
+| **Problem**            | How should Dashboard statistics (total count, credibility & sentiment distributions, latency, language breakdown) be calculated? |
+| **Options Considered** | 1. Client-side aggregation: Fetch all records via `/api/v1/history` and aggregate in React. 2. Server-side dedicated endpoint: `GET /api/v1/dashboard/summary` using SQL `COUNT`, `AVG`, and `GROUP BY`. |
+| **Chosen Solution**    | Option 2: Dedicated server-side summary endpoint with database aggregation queries. |
+| **Reason**             | Fetching all records over the wire is O(N) in network payload and frontend memory, breaking down as data grows. PostgreSQL computes aggregations in milliseconds using indexed columns (`credibility_label`, `sentiment_label`, `deleted_at`). Excludes soft-deleted records directly at the database layer. |
+| **Impact**             | Instant dashboard load times (<15ms database query time); minimal network transfer (<2KB); clean separation of concerns; forward-compatible with user scoping (`user_id`). |
+| **Future Considerations** | In Phase 4/5, add Redis caching with a short TTL (e.g., 60s) or invalidation upon new analysis submissions for even higher concurrency. |
+
+### ADR-013: Short-Lived JWT + Refresh Token Architecture with Strict User Scoping and IDOR Prevention
+
+| Field                  | Detail                                                              |
+| ---------------------- | ------------------------------------------------------------------- |
+| **Date**               | 2026-09-09                                                          |
+| **Status**             | Accepted                                                            |
+| **Problem**            | How should authentication be handled, and how should user data (History & Dashboard) be protected from IDOR (Insecure Direct Object References)? |
+| **Options Considered** | 1. Session cookies with server-side session store. 2. Stateless JWT access token (15m) + refresh token (7d) with client authorization header and strict identity extraction. 3. Trusting client-supplied `user_id` query parameters. |
+| **Chosen Solution**    | Option 2: Short-lived HS256 JWT access tokens (15m TTL) paired with refresh tokens (7d TTL), combined with strict server-side identity extraction (`current_user.id`) via `get_current_user` FastAPI dependency. Client-supplied `user_id` query parameters are strictly forbidden/ignored for user data scoping. |
+| **Reason**             | Stateless JWT aligns with FastAPI's async architecture, eliminates server-side session lookup bottlenecks, and allows client-side token injection via Axios interceptors. Enforcing that the user's UUID is derived exclusively from the cryptographically verified JWT `sub` claim guarantees that a user cannot access another user's history or dashboard statistics by tampering with URLs or parameters (IDOR prevention). |
+| **Impact**             | Endpoints `/history`, `/history/{id}`, `/history/{id}` (delete), and `/dashboard/summary` require authentication; cross-user access attempts return `403 Forbidden`; password hashes are hashed with bcrypt and never exposed in responses or tokens; analysis persistence associates records with `current_user.id` when authenticated while preserving nullable `user_id` on historical records. |
+| **Future Considerations** | When HTTP-only cookie support is added in future production deployment, refresh tokens can be transferred into secure HTTP-only cookies alongside CSRF protection headers. |
+
+### ADR-014: Public URL Ingestion with Multi-Layer SSRF Defenses and HTML Article Extraction
+
+| Field                  | Detail                                                              |
+| ---------------------- | ------------------------------------------------------------------- |
+| **Date**               | 2026-09-09                                                          |
+| **Status**             | Accepted                                                            |
+| **Problem**            | How should VeritasAI ingest public news article URLs without introducing Server-Side Request Forgery (SSRF) vulnerabilities, denial-of-service risks, or extracting noisy navigation boilerplate? |
+| **Options Considered** | 1. Direct fetch with `httpx` using default `follow_redirects=True`. 2. Private monkey-patching of `httpcore` network backends. 3. Multi-layer defense using public Python standard libraries (`ipaddress`, `socket`, `urllib.parse`) with strict manual redirect hop validation, MIME filtering, size limits, and `BeautifulSoup` DOM cleaning. |
+| **Chosen Solution**    | Option 3: Syntactic validation, pre-connection DNS resolution checking every resolved IPv4/IPv6 address against loopback, RFC 1918 private, link-local, carrier-grade NAT, and local TLD ranges. Manual redirect loop (max 5 hops) where EVERY redirect hop is independently re-validated before connecting, preventing public-to-private pivot attacks. Safe streaming with 5 MB body cap, HTML-only MIME filtering, neutral VeritasAI User-Agent, and `BeautifulSoup` heuristic article extraction. |
+| **Reason**             | Avoids brittle private library monkey-patching while providing complete coverage against SSRF vectors (including DNS resolution of internal domains, cloud metadata endpoints like `169.254.169.254`, and malicious redirects). `BeautifulSoup` decomposes scripts, styles, forms, and boilerplate noise, ensuring XLM-RoBERTa models receive clean, high-density article text. |
+| **Impact**             | Secure `POST /api/v1/analyze/url` endpoint requiring authentication; zero internal network exposure; user-scoped history persistence with `source_url` and `title`; full backwards compatibility with text analysis. |
+| **Future Considerations** | If headless rendering of client-rendered Single Page Application news sites is needed in Phase 4/5, evaluate isolated sandboxed headless browser instances (e.g. Playwright) in an egress-restricted container. |
+
 ---
 
 ## Template for New Decisions

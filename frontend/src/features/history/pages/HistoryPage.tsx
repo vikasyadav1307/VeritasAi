@@ -16,6 +16,7 @@ import {
   ChevronRight,
   X,
   FlaskConical,
+  ExternalLink,
 } from 'lucide-react';
 import {
   getHistory,
@@ -628,12 +629,56 @@ export default function HistoryPage() {
               padding: 'var(--space-3) var(--space-4)',
               fontSize: 'var(--text-xs)',
               color: 'var(--text-secondary)',
-              marginBottom: 'var(--space-6)',
+              marginBottom: 'var(--space-4)',
             }}>
               <span>Execution Time: <strong>{formatProcessingTime(selectedItem.processing_time_ms)}</strong></span>
               <span>Language: <strong>{selectedItem.detected_language}</strong></span>
               <span>Modality: <strong>{selectedItem.input_type}</strong></span>
             </div>
+
+            {/* Source URL & Title (for URL analyses) */}
+            {selectedItem.source_url && (
+              <div style={{
+                background: 'var(--bg-elevated)',
+                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--radius-md)',
+                padding: 'var(--space-3) var(--space-4)',
+                fontSize: 'var(--text-xs)',
+                marginBottom: 'var(--space-4)',
+              }}>
+                {selectedItem.title && (
+                  <div style={{ marginBottom: 'var(--space-2)' }}>
+                    <span style={{ fontWeight: 'var(--font-semibold)', color: 'var(--text-muted)' }}>TITLE: </span>
+                    <span style={{ color: 'var(--text-primary)', fontWeight: 'var(--font-medium)' }}>
+                      {selectedItem.title}
+                    </span>
+                  </div>
+                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                  <span style={{ fontWeight: 'var(--font-semibold)', color: 'var(--text-muted)', flexShrink: 0 }}>
+                    SOURCE URL:
+                  </span>
+                  <a
+                    href={selectedItem.source_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      color: 'var(--color-primary-400)',
+                      textDecoration: 'none',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {selectedItem.source_url}
+                    <ExternalLink size={12} style={{ flexShrink: 0 }} />
+                  </a>
+                </div>
+              </div>
+            )}
 
             {/* Submitted Text Content */}
             <div>

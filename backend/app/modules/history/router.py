@@ -18,6 +18,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.database.session import get_db_session
 from app.models.analysis import AnalysisResult
+from app.models.user import User
+from app.modules.auth.dependencies import get_current_user
 
 logger = structlog.get_logger(__name__)
 
@@ -28,33 +30,36 @@ router = APIRouter(prefix="/history", tags=["History"])
 
 
 class HistoryItem(BaseModel):
-    """Summary of a past analysis."""
+    """Public representation of an analysis history record."""
 
     id: uuid.UUID
-    input_type: str = Field(description="Input modality: text, url, image")
-    original_text: str = Field(description="Original submitted text content")
-    detected_language: str = Field(description="Language code or auto")
-    credibility_label: str = Field(description="Real or Fake")
-    credibility_score: float = Field(description="Credibility confidence 0.0-1.0")
-    sentiment_label: str = Field(description="Positive, Negative, or Neutral")
-    sentiment_score: float = Field(description="Sentiment confidence 0.0-1.0")
-    confidence: float = Field(description="Overall analysis confidence score")
-    processing_time_ms: float = Field(description="Inference time in ms")
-    is_mock: bool = Field(description="Whether mock model fallback was used")
-    created_at: datetime = Field(description="Timestamp when analysis was created")
+    user_id: uuid.UUID | None = None
+    input_type: str
+    original_text: str
+    source_url: str | None = None
+    title: str | None = None
+    detected_language: str
+    credibility_label: str
+    credibility_score: float
+    sentiment_label: str
+    sentiment_score: float
+    confidence: float
+    processing_time_ms: float
+    is_mock: bool
+    created_at: datetime
 
     class Config:
         from_attributes = True
 
 
 class PaginatedHistoryResponse(BaseModel):
-    """Paginated list of historical analyses."""
+    """Paginated list of history items with metadata."""
 
-    items: list[HistoryItem]
-    total: int = Field(ge=0, description="Total number of active records")
-    page: int = Field(ge=1, description="Current page number")
-    per_page: int = Field(ge=1, description="Number of items per page")
-    total_pages: int = Field(ge=0, description="Total number of pages")
+    items: list[HistoryItem] = Field(default_factory=list)
+    total: int = Field(ge=0)
+    page: int = Field(ge=1)
+    per_page: int = Field(ge=1)
+    total_pages: int = Field(ge=0)
 
 
 # ── Endpoints ──
@@ -65,6 +70,9 @@ class PaginatedHistoryResponse(BaseModel):
     response_model=PaginatedHistoryResponse,
     status_code=status.HTTP_200_OK,
     summary="List analysis history",
+    responses={
+        401: {"description": "Not authenticated"},
+    },
 )
 async def list_history(
     page: int = Query(default=1, ge=1, description="Page number (1-indexed)"),
@@ -73,11 +81,15 @@ async def list_history(
     sentiment: str | None = Query(default=None, description="Filter by sentiment label"),
     search: str | None = Query(default=None, description="Search text content"),
     db: AsyncSession = Depends(get_db_session),
+    current_user: User = Depends(get_current_user),
 ) -> PaginatedHistoryResponse:
     """Retrieve a paginated list of past analyses ordered by creation time."""
 
-    # Base query excludes soft-deleted records
-    base_filter = [AnalysisResult.deleted_at.is_(None)]
+    # Base query: strictly exclude soft-deleted records and scope to current user
+    base_filter = [
+        AnalysisResult.deleted_at.is_(None),
+        AnalysisResult.user_id == current_user.id,
+    ]
 
     if credibility:
         base_filter.append(AnalysisResult.credibility_label.ilike(credibility))
@@ -120,12 +132,15 @@ async def list_history(
     status_code=status.HTTP_200_OK,
     summary="Get single analysis details",
     responses={
+        401: {"description": "Not authenticated"},
+        403: {"description": "Access denied — analysis belongs to another user"},
         404: {"description": "Analysis record not found"},
     },
 )
 async def get_history_item(
     analysis_id: uuid.UUID,
     db: AsyncSession = Depends(get_db_session),
+    current_user: User = Depends(get_current_user),
 ) -> HistoryItem:
     """Retrieve full details of a specific analysis record."""
 
@@ -142,6 +157,13 @@ async def get_history_item(
             detail="Analysis record not found.",
         )
 
+    # Ownership check — prevent IDOR
+    if record.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: You do not have permission to view this analysis record.",
+        )
+
     return HistoryItem.model_validate(record)
 
 
@@ -150,12 +172,15 @@ async def get_history_item(
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete analysis record",
     responses={
+        401: {"description": "Not authenticated"},
+        403: {"description": "Access denied — analysis belongs to another user"},
         404: {"description": "Analysis record not found"},
     },
 )
 async def delete_history_item(
     analysis_id: uuid.UUID,
     db: AsyncSession = Depends(get_db_session),
+    current_user: User = Depends(get_current_user),
 ) -> None:
     """Soft-delete an analysis record."""
 
@@ -172,10 +197,18 @@ async def delete_history_item(
             detail="Analysis record not found.",
         )
 
+    # Ownership check — prevent IDOR
+    if record.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: You do not have permission to delete this analysis record.",
+        )
+
     record.deleted_at = func.now()
     await db.flush()
 
     logger.info(
-        "analysis_deleted",
+        "analysis_record_deleted",
         analysis_id=str(analysis_id),
+        user_id=str(current_user.id),
     )

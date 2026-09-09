@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useAuthStore, type AuthUser } from '../store/auth.store';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
 
@@ -28,12 +29,26 @@ export interface AnalyzeResponse {
   processing_time_ms: number;
 }
 
+export interface AnalyzeUrlRequest {
+  url: string;
+}
+
+export interface AnalyzeUrlResponse extends AnalyzeResponse {
+  source_url: string;
+  final_url?: string;
+  extracted_title?: string;
+  detected_language: string;
+  character_count: number;
+}
+
 // ── History API Types ──
 
 export interface HistoryItem {
   id: string;
   input_type: 'text' | 'url' | 'image' | string;
   original_text: string;
+  source_url?: string;
+  title?: string;
   detected_language: string;
   credibility_label: 'Real' | 'Fake';
   credibility_score: number;
@@ -53,14 +68,69 @@ export interface PaginatedHistoryResponse {
   total_pages: number;
 }
 
+// ── Dashboard API Types ──
+
+export interface CredibilityDistribution {
+  real_count: number;
+  fake_count: number;
+  real_percentage: number;
+  fake_percentage: number;
+}
+
+export interface SentimentDistribution {
+  positive_count: number;
+  negative_count: number;
+  neutral_count: number;
+  positive_percentage: number;
+  negative_percentage: number;
+  neutral_percentage: number;
+}
+
+export interface LanguageCount {
+  language: string;
+  count: number;
+  percentage: number;
+}
+
+export interface DashboardSummary {
+  total_analyses: number;
+  credibility_distribution: CredibilityDistribution;
+  sentiment_distribution: SentimentDistribution;
+  average_confidence: number;
+  average_processing_time_ms: number;
+  language_distribution: LanguageCount[];
+  recent_analyses: HistoryItem[];
+}
+
+// ── Auth API Types ──
+
+export interface RegisterRequest {
+  email: string;
+  username: string;
+  full_name?: string;
+  password: string;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface AuthResponse {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  user: AuthUser;
+}
+
 /**
  * Pre-configured Axios instance for all API calls.
  *
  * Features:
  * - Base URL from environment variable
  * - JSON content type by default
- * - Request interceptor for JWT injection (Phase 2)
- * - Response interceptor for token refresh (Phase 2)
+ * - Request interceptor for JWT injection
+ * - Response interceptor for 401 → token refresh → retry
  */
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -69,31 +139,143 @@ export const api = axios.create({
     'Accept': 'application/json',
   },
   timeout: 120_000, // 120 seconds — CPU model inference takes ~68s
-  withCredentials: true, // Send cookies (refresh token)
 });
 
-// ── Request Interceptor ──
+// ── Request Interceptor — JWT Injection ──
 api.interceptors.request.use(
   (config) => {
-    // JWT injection will be added in Phase 2
-    // const token = useAuthStore.getState().accessToken;
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`;
-    // }
+    const token = useAuthStore.getState().accessToken;
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => Promise.reject(error),
 );
 
-// ── Response Interceptor ──
+// ── Response Interceptor — 401 Refresh ──
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (token: string) => void;
+  reject: (error: unknown) => void;
+}> = [];
+
+function processQueue(error: unknown, token: string | null) {
+  failedQueue.forEach((promise) => {
+    if (token) {
+      promise.resolve(token);
+    } else {
+      promise.reject(error);
+    }
+  });
+  failedQueue = [];
+}
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    // Token refresh logic will be added in Phase 2
-    // if (error.response?.status === 401) { ... }
-    return Promise.reject(error);
+    const originalRequest = error.config;
+
+    // Only attempt refresh for 401 errors, skip if already retried or is an auth endpoint
+    if (
+      error.response?.status !== 401 ||
+      originalRequest._retry ||
+      originalRequest.url?.includes('/auth/')
+    ) {
+      return Promise.reject(error);
+    }
+
+    const refreshToken = useAuthStore.getState().refreshToken;
+    if (!refreshToken) {
+      useAuthStore.getState().clearAuth();
+      return Promise.reject(error);
+    }
+
+    if (isRefreshing) {
+      // Queue this request while refresh is in progress
+      return new Promise<string>((resolve, reject) => {
+        failedQueue.push({ resolve, reject });
+      }).then((token) => {
+        originalRequest.headers.Authorization = `Bearer ${token}`;
+        return api(originalRequest);
+      });
+    }
+
+    originalRequest._retry = true;
+    isRefreshing = true;
+
+    try {
+      const response = await axios.post<AuthResponse>(
+        `${API_BASE_URL}/api/v1/auth/refresh`,
+        { refresh_token: refreshToken },
+        { headers: { 'Content-Type': 'application/json' } },
+      );
+
+      const { access_token, refresh_token: newRefresh, user } = response.data;
+      useAuthStore.getState().setAuth(user, access_token, newRefresh);
+
+      processQueue(null, access_token);
+
+      originalRequest.headers.Authorization = `Bearer ${access_token}`;
+      return api(originalRequest);
+    } catch (refreshError) {
+      processQueue(refreshError, null);
+      useAuthStore.getState().clearAuth();
+      return Promise.reject(refreshError);
+    } finally {
+      isRefreshing = false;
+    }
   },
 );
+
+// ── Auth API ──
+
+/**
+ * Register a new user account.
+ */
+export async function registerUser(data: RegisterRequest): Promise<AuthResponse> {
+  const response = await api.post<AuthResponse>('/api/v1/auth/register', data);
+  return response.data;
+}
+
+/**
+ * Authenticate with email and password.
+ */
+export async function loginUser(data: LoginRequest): Promise<AuthResponse> {
+  const response = await api.post<AuthResponse>('/api/v1/auth/login', data);
+  return response.data;
+}
+
+/**
+ * Refresh access token using a refresh token.
+ */
+export async function refreshAccessToken(refreshToken: string): Promise<AuthResponse> {
+  const response = await api.post<AuthResponse>('/api/v1/auth/refresh', {
+    refresh_token: refreshToken,
+  });
+  return response.data;
+}
+
+/**
+ * Get the currently authenticated user's profile.
+ */
+export async function getCurrentUser(): Promise<AuthUser> {
+  const response = await api.get<AuthUser>('/api/v1/auth/me');
+  return response.data;
+}
+
+/**
+ * Log out the current user: calls backend /logout endpoint and clears local auth state.
+ */
+export async function logoutUser(): Promise<void> {
+  try {
+    await api.post('/api/v1/auth/logout');
+  } catch {
+    // Ignore network / server errors during logout — client auth must still be cleared
+  } finally {
+    useAuthStore.getState().clearAuth();
+  }
+}
 
 // ── Analysis API ──
 
@@ -111,6 +293,19 @@ export async function analyzeText(
     text,
     language,
   } satisfies AnalyzeRequest);
+
+  return response.data;
+}
+
+/**
+ * Send an article URL to the backend for SSRF-safe scraping and analysis.
+ *
+ * @param url - Public HTTP or HTTPS article URL.
+ */
+export async function analyzeUrl(url: string): Promise<AnalyzeUrlResponse> {
+  const response = await api.post<AnalyzeUrlResponse>('/api/v1/analyze/url', {
+    url,
+  } satisfies AnalyzeUrlRequest);
 
   return response.data;
 }
@@ -154,4 +349,17 @@ export async function getHistoryById(id: string): Promise<HistoryItem> {
  */
 export async function deleteHistory(id: string): Promise<void> {
   await api.delete(`/api/v1/history/${id}`);
+}
+
+// ── Dashboard API ──
+
+/**
+ * Fetch analytics dashboard summary metrics and distributions.
+ */
+export async function getDashboardSummary(userId?: string): Promise<DashboardSummary> {
+  const params = new URLSearchParams();
+  if (userId) params.append('user_id', userId);
+  const qs = params.toString() ? `?${params.toString()}` : '';
+  const response = await api.get<DashboardSummary>(`/api/v1/dashboard/summary${qs}`);
+  return response.data;
 }

@@ -16,7 +16,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.database.session import get_db_session
 from app.models.analysis import AnalysisResult
+from app.models.user import User
 from app.modules.analysis.services import AnalysisService
+from app.modules.auth.dependencies import get_optional_user
 
 logger = structlog.get_logger(__name__)
 
@@ -153,6 +155,7 @@ _analysis_service = AnalysisService()
 async def analyze_text(
     request: AnalyzeRequest,
     db: AsyncSession = Depends(get_db_session),
+    current_user: User | None = Depends(get_optional_user),
 ) -> AnalyzeResponse:
     """Analyze text for credibility and sentiment.
 
@@ -200,6 +203,7 @@ async def analyze_text(
         )
         record = AnalysisResult(
             id=record_id,
+            user_id=current_user.id if current_user else None,
             input_type="text",
             original_text=request.text,
             detected_language=request.language if request.language != "auto" else "en",
@@ -221,6 +225,7 @@ async def analyze_text(
         )
 
     except Exception as db_exc:
+        await db.rollback()
         logger.warning(
             "analysis_db_save_failed",
             error=str(db_exc),

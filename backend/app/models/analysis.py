@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import Boolean, Float, String, Text
+from sqlalchemy import Boolean, Float, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -28,6 +28,7 @@ class AnalysisResult(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin)
     # User association (nullable for anonymous / pre-auth analyses)
     user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )
@@ -45,6 +46,14 @@ class AnalysisResult(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin)
     )
     cleaned_text: Mapped[str | None] = mapped_column(
         Text,
+        nullable=True,
+    )
+    source_url: Mapped[str | None] = mapped_column(
+        String(2048),
+        nullable=True,
+    )
+    title: Mapped[str | None] = mapped_column(
+        String(500),
         nullable=True,
     )
     detected_language: Mapped[str] = mapped_column(

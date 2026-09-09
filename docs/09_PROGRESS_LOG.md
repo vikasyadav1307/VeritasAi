@@ -18,12 +18,12 @@
 | Property           | Value                                      |
 | ------------------ | ------------------------------------------ |
 | **Current Phase**  | Phase 3 — Core Platform Features           |
-| **Current Sprint** | Milestone 3.1 — History Persistence & UI   |
-| **Sprint Start**   | 2026-09-08                                 |
-| **Sprint End**     | Completed                                  |
+| **Current Sprint** | Milestone 3.4 — URL Analysis               |
+| **Sprint Start**   | 2026-09-09                                 |
+| **Sprint End**     | Implemented & Verified (Uncommitted)       |
 | **Git Branch**     | `master`                                   |
 | **Latest Tag**     | None                                       |
-| **Blockers**       | None — models trained, DB running          |
+| **Blockers**       | None                                       |
 
 ---
 
@@ -308,6 +308,55 @@ Persist text analysis results into PostgreSQL automatically, provide backend his
 
 ---
 
+## Phase 3 — Milestone 3.2: Analytics Dashboard
+**Date:** 2026-09-08
+
+### Objective
+Build a functional, interactive Dashboard powered by real analysis data stored in PostgreSQL, with zero hardcoded/fabricated figures and strict exclusion of soft-deleted records.
+
+### Completed — VERIFIED
+
+#### Backend Summary API (`backend/app/modules/dashboard/`, `backend/app/main.py`)
+- [x] Created `backend/app/modules/dashboard/__init__.py` and `router.py`
+- [x] Implemented `GET /api/v1/dashboard/summary` providing SQL-computed:
+  - Total non-deleted analyses count
+  - Real vs. Fake distribution counts and percentages
+  - Positive, Negative, and Neutral sentiment counts and percentages
+  - Average confidence percentage across all active records
+  - Average processing time / latency in milliseconds
+  - Language distribution counts and percentages
+  - Recent 5 non-deleted analyses
+- [x] Filtered strictly with `deleted_at.is_(None)`
+- [x] Mounted `dashboard_router` under `/api/v1` in `backend/app/main.py`
+- [x] Added `ADR-011` in `docs/10_TECHNICAL_DECISIONS.md` documenting server-side database aggregations
+
+#### Frontend Dashboard UI (`frontend/src/features/dashboard/pages/DashboardPage.tsx`, `api.ts`)
+- [x] Added TypeScript interfaces `CredibilityDistribution`, `SentimentDistribution`, `LanguageCount`, `DashboardSummary` to `frontend/src/services/api.ts`
+- [x] Added `getDashboardSummary()` API method to `frontend/src/services/api.ts`
+- [x] Redesigned `DashboardPage.tsx` into a responsive, real-time analytics interface:
+  - 5 KPI stat cards: Total Analyses, Real Detected, Fake Detected, Avg Confidence, Avg Latency
+  - Credibility Distribution: Dual-segment ratio bar (Real vs. Fake) with counts & percentages
+  - Sentiment Distribution: Three-segment spectrum bar (Positive vs. Negative vs. Neutral) with counts & percentages
+  - Language Breakdown: Bar breakdown of top detected languages
+  - Recent Analyses List: Snippet, badges, timestamps, latency, and "Details" modal
+  - Inspection Modal: Full submitted text, exact prediction breakdown, and metadata
+  - States: Loading skeleton, error alert with retry button, empty state with CTA to `/analyze`
+  - Header actions: Live refresh button with spinning icon, "New Analysis" button
+
+#### Build & E2E Verification
+- [x] `npx tsc --noEmit` — **0 TypeScript errors**
+- [x] `npm run build` — **Success** (built cleanly in 1.01s)
+- [x] Live API verification via curl: Total, counts, and percentages match database records exactly
+- [x] Live browser subagent verification:
+  - KPI cards loaded verified PostgreSQL data
+  - Inspected record via Details modal
+  - Submitted new fake news analysis on `/analyze`
+  - Confirmed Dashboard Total and Fake counts dynamically incremented
+  - Soft-deleted record via `DELETE /api/v1/history/{id}` and verified it was immediately excluded from all metrics
+  - Verified Analyze and History pages have zero regressions
+
+---
+
 ## Files Tracker
 
 ### Files Added
@@ -345,6 +394,17 @@ Persist text analysis results into PostgreSQL automatically, provide backend his
 | 2026-09-08 | `backend/app/infrastructure/database/migrations/versions/8a9aac35e684_create_analysis_results_table.py` | 3 | Alembic migration for analysis_results |
 | 2026-09-08 | `backend/app/modules/history/__init__.py` | 3 | History module init |
 | 2026-09-08 | `backend/app/modules/history/router.py` | 3 | History REST router |
+| 2026-09-08 | `backend/app/modules/dashboard/__init__.py` | 3 | Dashboard module init |
+| 2026-09-08 | `backend/app/modules/dashboard/router.py` | 3 | Dashboard summary router |
+| 2026-09-09 | `backend/app/models/user.py`              | 3 | User database model |
+| 2026-09-09 | `backend/app/infrastructure/database/migrations/versions/671939c98ccd_create_users_table.py` | 3 | Alembic migration for users & foreign key |
+| 2026-09-09 | `backend/app/modules/auth/__init__.py`    | 3 | Auth module init |
+| 2026-09-09 | `backend/app/modules/auth/router.py`      | 3 | Auth REST router (register, login, refresh, logout, me) |
+| 2026-09-09 | `backend/app/modules/auth/schemas.py`     | 3 | Auth Pydantic V2 schemas |
+| 2026-09-09 | `backend/app/modules/auth/security.py`    | 3 | bcrypt hashing & JWT token management |
+| 2026-09-09 | `backend/app/modules/auth/dependencies.py`| 3 | get_current_user & get_optional_user dependencies |
+| 2026-09-09 | `backend/tests/integration/test_auth.py`  | 3 | 14 integration tests for auth & IDOR prevention |
+| 2026-09-09 | `frontend/src/store/auth.store.ts`        | 3 | Zustand authentication state store |
 
 ### Files Modified
 
@@ -360,12 +420,26 @@ Persist text analysis results into PostgreSQL automatically, provide backend his
 | 2026-09-08 | `backend/app/modules/sentiment/model.py`  | Fixed model path + CLASS_MAP        | Real model loads         |
 | 2026-09-08 | `backend/app/modules/analysis/router.py`  | Persist analysis to DB + return id  | Auto-history persistence |
 | 2026-09-08 | `backend/app/config.py`                   | Added 127.0.0.1 origins to CORS     | Fix browser connection   |
-| 2026-09-08 | `backend/app/main.py`                     | Registered history_router           | Mount /api/v1/history    |
+| 2026-09-08 | `backend/app/main.py`                     | Registered history & dashboard routers | Mount /history, /dashboard |
 | 2026-09-08 | `backend/app/infrastructure/database/migrations/env.py` | Import app.models    | Alembic model awareness  |
-| 2026-09-08 | `frontend/src/services/api.ts`            | Added History types & API calls     | History API integration  |
+| 2026-09-08 | `frontend/src/services/api.ts`            | Added History & Dashboard types/APIs| API integration          |
 | 2026-09-08 | `frontend/src/features/history/pages/HistoryPage.tsx` | Full interactive implementation | History table + modal |
+| 2026-09-08 | `frontend/src/features/dashboard/pages/DashboardPage.tsx` | Full analytics dashboard | Real metrics + charts |
 | 2026-09-08 | `frontend/vite.config.ts`                 | Vitest type fix + proxy 127.0.0.1   | Build & proxy alignment  |
 | 2026-09-08 | `.env.example`                            | Updated CORS_ORIGINS & base URL     | Dev documentation config |
+| 2026-09-08 | `docs/10_TECHNICAL_DECISIONS.md`          | Added ADR-011                       | Server-side aggregations |
+| 2026-09-09 | `backend/app/models/analysis.py`          | Added ForeignKey to users.id        | Preserved nullable user_id |
+| 2026-09-09 | `backend/app/modules/history/router.py`   | Strict auth + IDOR checks           | 403 Forbidden on foreign items |
+| 2026-09-09 | `backend/app/modules/dashboard/router.py` | Strict auth + user-scoped metrics   | Ignored external user_id |
+| 2026-09-09 | `backend/app/modules/analysis/router.py`  | Associated auth analysis + rollback | Fixed session rollback |
+| 2026-09-09 | `backend/tests/conftest.py`               | Async SQLite StaticPool fixture     | Robust test isolation    |
+| 2026-09-09 | `frontend/src/app/Router.tsx`             | Added ProtectedRoute component      | Protected /analyze, /history, /dashboard |
+| 2026-09-09 | `frontend/src/app/Providers.tsx`          | Token hydration in AuthInitializer  | Validated via /auth/me   |
+| 2026-09-09 | `frontend/src/components/layout/Header.tsx` | Integrated user badge & logout     | Functional logout flow   |
+| 2026-09-09 | `frontend/src/services/api.ts`            | Auth endpoints & interceptors       | JWT injection & refresh  |
+| 2026-09-09 | `frontend/src/features/auth/pages/LoginPage.tsx` | Form validation & login flow | Zod + React Hook Form    |
+| 2026-09-09 | `frontend/src/features/auth/pages/RegisterPage.tsx` | Form validation & register flow | Zod + React Hook Form |
+| 2026-09-09 | `docs/10_TECHNICAL_DECISIONS.md`          | Added ADR-013                       | JWT + IDOR architecture  |
 
 ---
 

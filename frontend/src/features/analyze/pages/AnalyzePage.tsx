@@ -1,15 +1,36 @@
 import { useState, useCallback } from 'react';
-import { Search, Loader2, AlertTriangle, CheckCircle, XCircle, Minus, Trash2, Clock, FlaskConical } from 'lucide-react';
-import { analyzeText, type AnalyzeResponse } from '../../../services/api';
+import {
+  Search,
+  Loader2,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Minus,
+  Trash2,
+  Clock,
+  FlaskConical,
+  Link as LinkIcon,
+  ExternalLink,
+  Globe,
+  Newspaper,
+  FileText,
+} from 'lucide-react';
+import {
+  analyzeText,
+  analyzeUrl,
+  type AnalyzeResponse,
+  type AnalyzeUrlResponse,
+} from '../../../services/api';
 import axios from 'axios';
 
 const MIN_LENGTH = 10;
 const MAX_LENGTH = 50_000;
+const MAX_URL_LENGTH = 2048;
 
 type TabId = 'text' | 'url' | 'image';
 const TABS: { id: TabId; label: string; disabled: boolean }[] = [
   { id: 'text', label: 'Text', disabled: false },
-  { id: 'url', label: 'URL', disabled: true },
+  { id: 'url', label: 'URL', disabled: false },
   { id: 'image', label: 'Image', disabled: true },
 ];
 
@@ -44,6 +65,10 @@ function getErrorMessage(error: unknown): string {
       return data.detail;
     }
 
+    if (status === 400 && data?.detail && typeof data.detail === 'string') {
+      return data.detail;
+    }
+
     if (status === 500) return 'Internal server error. Please try again later.';
     if (status === 503) return 'Service unavailable. The model may still be loading.';
     return `Request failed (HTTP ${status}).`;
@@ -54,16 +79,26 @@ function getErrorMessage(error: unknown): string {
 }
 
 export default function AnalyzePage() {
-  const [activeTab] = useState<TabId>('text');
+  const [activeTab, setActiveTab] = useState<TabId>('text');
   const [text, setText] = useState('');
+  const [url, setUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<AnalyzeResponse | null>(null);
+  const [result, setResult] = useState<(AnalyzeResponse & Partial<AnalyzeUrlResponse>) | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Text validation
   const charCount = text.length;
   const isTooShort = charCount > 0 && charCount < MIN_LENGTH;
   const isTooLong = charCount > MAX_LENGTH;
-  const canSubmit = charCount >= MIN_LENGTH && charCount <= MAX_LENGTH && !isLoading;
+  const canSubmitText = charCount >= MIN_LENGTH && charCount <= MAX_LENGTH && !isLoading;
+
+  // URL validation
+  const trimmedUrl = url.trim();
+  const isValidUrlScheme = /^https?:\/\/.+/i.test(trimmedUrl);
+  const isUrlTooLong = trimmedUrl.length > MAX_URL_LENGTH;
+  const canSubmitUrl = isValidUrlScheme && !isUrlTooLong && !isLoading;
+
+  const canSubmit = activeTab === 'text' ? canSubmitText : canSubmitUrl;
 
   const handleAnalyze = useCallback(async () => {
     if (!canSubmit) return;
@@ -72,19 +107,29 @@ export default function AnalyzePage() {
     setErrorMessage(null);
 
     try {
-      const response = await analyzeText(text);
-      setResult(response);
+      if (activeTab === 'text') {
+        const response = await analyzeText(text);
+        setResult(response);
+      } else if (activeTab === 'url') {
+        const response = await analyzeUrl(trimmedUrl);
+        setResult(response);
+      }
     } catch (err: unknown) {
       setErrorMessage(getErrorMessage(err));
-      // Keep previous results visible on error
     } finally {
       setIsLoading(false);
     }
-  }, [text, canSubmit]);
+  }, [activeTab, text, trimmedUrl, canSubmit]);
 
   const handleClear = useCallback(() => {
     setText('');
+    setUrl('');
     setResult(null);
+    setErrorMessage(null);
+  }, []);
+
+  const handleTabChange = useCallback((tabId: TabId) => {
+    setActiveTab(tabId);
     setErrorMessage(null);
   }, []);
 
@@ -92,7 +137,9 @@ export default function AnalyzePage() {
     <div>
       <h1 style={{ marginBottom: 'var(--space-2)' }}>Analyze Content</h1>
       <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--space-8)' }}>
-        Enter text to detect fake news and analyze sentiment.
+        {activeTab === 'text'
+          ? 'Enter text to detect fake news and analyze sentiment.'
+          : 'Submit a public article URL to extract and analyze its credibility and sentiment.'}
       </p>
 
       {/* ── Input Card ── */}
@@ -114,6 +161,7 @@ export default function AnalyzePage() {
             <button
               key={tab.id}
               disabled={tab.disabled}
+              onClick={() => !tab.disabled && handleTabChange(tab.id)}
               aria-selected={activeTab === tab.id}
               role="tab"
               style={{
@@ -147,63 +195,134 @@ export default function AnalyzePage() {
           ))}
         </div>
 
-        {/* Text input */}
-        <textarea
-          id="analyze-text-input"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Enter or paste the text you want to analyze..."
-          aria-label="Text to analyze"
-          aria-describedby="char-count-info"
-          maxLength={MAX_LENGTH}
-          rows={8}
-          disabled={isLoading}
-          style={{
-            width: '100%',
-            padding: 'var(--space-4)',
-            background: 'var(--bg-elevated)',
-            border: `1px solid ${isTooLong ? 'var(--color-fake)' : 'var(--border-color)'}`,
-            borderRadius: 'var(--radius-md)',
-            color: 'var(--text-primary)',
-            fontSize: 'var(--text-sm)',
-            resize: 'vertical',
-            outline: 'none',
-            fontFamily: 'var(--font-sans)',
-            lineHeight: 'var(--leading-normal)',
-            transition: 'border-color var(--transition-fast)',
-            opacity: isLoading ? 0.6 : 1,
-          }}
-        />
+        {/* ── Text Input Mode ── */}
+        {activeTab === 'text' && (
+          <>
+            <textarea
+              id="analyze-text-input"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Enter or paste the text you want to analyze..."
+              aria-label="Text to analyze"
+              aria-describedby="char-count-info"
+              maxLength={MAX_LENGTH}
+              rows={8}
+              disabled={isLoading}
+              style={{
+                width: '100%',
+                padding: 'var(--space-4)',
+                background: 'var(--bg-elevated)',
+                border: `1px solid ${isTooLong ? 'var(--color-fake)' : 'var(--border-color)'}`,
+                borderRadius: 'var(--radius-md)',
+                color: 'var(--text-primary)',
+                fontSize: 'var(--text-sm)',
+                resize: 'vertical',
+                outline: 'none',
+                fontFamily: 'var(--font-sans)',
+                lineHeight: 'var(--leading-normal)',
+                transition: 'border-color var(--transition-fast)',
+                opacity: isLoading ? 0.6 : 1,
+              }}
+            />
 
-        {/* Character count & validation */}
-        <div
-          id="char-count-info"
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginTop: 'var(--space-2)',
-            fontSize: 'var(--text-xs)',
-          }}
-        >
-          <span style={{
-            color: isTooShort
-              ? 'var(--color-uncertain)'
-              : isTooLong
-                ? 'var(--color-fake)'
-                : 'var(--text-muted)',
-          }}>
-            {isTooShort && `Minimum ${MIN_LENGTH} characters required`}
-            {isTooLong && `Maximum ${MAX_LENGTH.toLocaleString()} characters exceeded`}
-          </span>
-          <span style={{
-            color: isTooLong
-              ? 'var(--color-fake)'
-              : 'var(--text-muted)',
-          }}>
-            {charCount.toLocaleString()} / {MAX_LENGTH.toLocaleString()}
-          </span>
-        </div>
+            <div
+              id="char-count-info"
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginTop: 'var(--space-2)',
+                fontSize: 'var(--text-xs)',
+              }}
+            >
+              <span style={{
+                color: isTooShort
+                  ? 'var(--color-uncertain)'
+                  : isTooLong
+                    ? 'var(--color-fake)'
+                    : 'var(--text-muted)',
+              }}>
+                {isTooShort && `Minimum ${MIN_LENGTH} characters required`}
+                {isTooLong && `Maximum ${MAX_LENGTH.toLocaleString()} characters exceeded`}
+              </span>
+              <span style={{
+                color: isTooLong
+                  ? 'var(--color-fake)'
+                  : 'var(--text-muted)',
+              }}>
+                {charCount.toLocaleString()} / {MAX_LENGTH.toLocaleString()}
+              </span>
+            </div>
+          </>
+        )}
+
+        {/* ── URL Input Mode ── */}
+        {activeTab === 'url' && (
+          <>
+            <div style={{ position: 'relative' }}>
+              <div style={{
+                position: 'absolute',
+                left: 'var(--space-4)',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: 'var(--text-muted)',
+                display: 'flex',
+                alignItems: 'center',
+                pointerEvents: 'none',
+              }}>
+                <LinkIcon size={18} />
+              </div>
+              <input
+                id="analyze-url-input"
+                type="url"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://example.com/news/article-headline..."
+                aria-label="Article URL to analyze"
+                aria-describedby="url-validation-info"
+                maxLength={MAX_URL_LENGTH}
+                disabled={isLoading}
+                style={{
+                  width: '100%',
+                  padding: 'var(--space-4) var(--space-4) var(--space-4) calc(var(--space-4) + 26px)',
+                  background: 'var(--bg-elevated)',
+                  border: `1px solid ${trimmedUrl && !isValidUrlScheme ? 'var(--color-fake)' : 'var(--border-color)'}`,
+                  borderRadius: 'var(--radius-md)',
+                  color: 'var(--text-primary)',
+                  fontSize: 'var(--text-sm)',
+                  outline: 'none',
+                  fontFamily: 'var(--font-sans)',
+                  transition: 'border-color var(--transition-fast)',
+                  opacity: isLoading ? 0.6 : 1,
+                }}
+              />
+            </div>
+
+            <div
+              id="url-validation-info"
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginTop: 'var(--space-2)',
+                fontSize: 'var(--text-xs)',
+              }}
+            >
+              <span style={{
+                color: trimmedUrl && !isValidUrlScheme
+                  ? 'var(--color-fake)'
+                  : 'var(--text-muted)',
+              }}>
+                {trimmedUrl && !isValidUrlScheme
+                  ? 'URL must begin with http:// or https://'
+                  : 'Enter the full public URL of an online news article (HTTP or HTTPS)'}
+              </span>
+              <span style={{ color: 'var(--text-muted)' }}>
+                {trimmedUrl.length} / {MAX_URL_LENGTH}
+              </span>
+            </div>
+          </>
+        )}
 
         {/* Actions row */}
         <div style={{
@@ -214,7 +333,7 @@ export default function AnalyzePage() {
           marginTop: 'var(--space-4)',
         }}>
           {/* Clear button */}
-          {(charCount > 0 || result || errorMessage) && (
+          {((activeTab === 'text' ? charCount > 0 : trimmedUrl.length > 0) || result || errorMessage) && (
             <button
               onClick={handleClear}
               disabled={isLoading}
@@ -244,7 +363,7 @@ export default function AnalyzePage() {
           <button
             onClick={handleAnalyze}
             disabled={!canSubmit}
-            aria-label={isLoading ? 'Analyzing text, please wait' : 'Analyze text'}
+            aria-label={isLoading ? 'Analyzing content, please wait' : activeTab === 'url' ? 'Analyze Article URL' : 'Analyze text'}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -271,8 +390,8 @@ export default function AnalyzePage() {
               </>
             ) : (
               <>
-                <Search size={16} />
-                Analyze
+                {activeTab === 'url' ? <LinkIcon size={16} /> : <Search size={16} />}
+                {activeTab === 'url' ? 'Analyze URL' : 'Analyze'}
               </>
             )}
           </button>
@@ -339,14 +458,16 @@ export default function AnalyzePage() {
             fontWeight: 'var(--font-medium)',
             color: 'var(--text-primary)',
           }}>
-            Analyzing your text…
+            {activeTab === 'url'
+              ? 'Fetching article and analyzing credibility…'
+              : 'Analyzing your text…'}
           </p>
           <p style={{
             fontSize: 'var(--text-sm)',
             color: 'var(--text-muted)',
             marginTop: 'var(--space-2)',
           }}>
-            This may take up to two minutes on CPU inference.
+            This may take up to a minute on CPU inference.
           </p>
         </div>
       )}
@@ -359,6 +480,103 @@ export default function AnalyzePage() {
           gap: 'var(--space-6)',
           gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
         }}>
+          {/* Article Metadata Card for URL analyses */}
+          {result.source_url && (
+            <div style={{
+              gridColumn: '1 / -1',
+              background: 'var(--bg-elevated)',
+              border: '1px solid var(--border-color)',
+              borderRadius: 'var(--radius-lg)',
+              padding: 'var(--space-5) var(--space-6)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'var(--space-3)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                <Newspaper size={18} style={{ color: 'var(--color-primary-400)' }} />
+                <h3 style={{
+                  fontSize: 'var(--text-base)',
+                  fontWeight: 'var(--font-semibold)',
+                  color: 'var(--text-primary)',
+                  margin: 0,
+                }}>
+                  {result.extracted_title || 'Analyzed Article'}
+                </h3>
+              </div>
+
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-2)',
+                fontSize: 'var(--text-xs)',
+                color: 'var(--text-secondary)',
+              }}>
+                <LinkIcon size={14} style={{ flexShrink: 0 }} />
+                <span style={{ fontWeight: 'var(--font-medium)', color: 'var(--text-muted)' }}>Source:</span>
+                <a
+                  href={result.final_url || result.source_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    color: 'var(--color-primary-400)',
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 'var(--space-1)',
+                    maxWidth: '100%',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                  title={result.final_url || result.source_url}
+                >
+                  {result.source_url}
+                  <ExternalLink size={12} style={{ flexShrink: 0 }} />
+                </a>
+              </div>
+
+              <div style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 'var(--space-2)',
+                marginTop: 'var(--space-1)',
+              }}>
+                {result.detected_language && (
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 'var(--space-1)',
+                    padding: 'var(--space-1) var(--space-3)',
+                    background: 'rgba(99, 102, 241, 0.1)',
+                    border: '1px solid rgba(99, 102, 241, 0.25)',
+                    borderRadius: 'var(--radius-full)',
+                    fontSize: 'var(--text-xs)',
+                    color: 'var(--color-primary-300)',
+                    fontWeight: 'var(--font-medium)',
+                  }}>
+                    <Globe size={12} />
+                    Language: {result.detected_language.toUpperCase()}
+                  </span>
+                )}
+                {typeof result.character_count === 'number' && (
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 'var(--space-1)',
+                    padding: 'var(--space-1) var(--space-3)',
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-full)',
+                    fontSize: 'var(--text-xs)',
+                    color: 'var(--text-secondary)',
+                  }}>
+                    <FileText size={12} />
+                    {result.character_count.toLocaleString()} chars extracted
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
           {/* Credibility Card */}
           <CredibilityCard
             label={result.credibility.label}

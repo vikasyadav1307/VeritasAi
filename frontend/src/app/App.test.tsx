@@ -3,9 +3,8 @@ import { describe, it, expect } from 'vitest';
 import { App } from './App';
 
 describe('App', () => {
-  it('renders without crashing', () => {
+  it('renders without crashing', async () => {
     render(<App />);
-    // The app should render the VeritasAI text somewhere (header logo)
-    expect(screen.getByText('VeritasAI')).toBeInTheDocument();
+    expect(await screen.findByText('VeritasAI')).toBeInTheDocument();
   });
 });

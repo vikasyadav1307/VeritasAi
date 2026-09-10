@@ -5,11 +5,11 @@
 | Field              | Value                                                              |
 | ------------------ | ------------------------------------------------------------------ |
 | **Document ID**    | DOC-11                                                             |
-| **Version**        | 1.0.0                                                              |
+| **Version**        | 1.1.0                                                              |
 | **Status**         | Active                                                             |
 | **Author**         | Vikas (Lead / Architect)                                           |
 | **Created**        | 2026-08-13                                                         |
-| **Last Updated**   | 2026-08-13                                                         |
+| **Last Updated**   | 2026-09-11                                                         |
 
 ---
 
@@ -28,20 +28,20 @@
 
 | ID     | Priority    | Description                                         | Dependencies | Est. Effort | Status     |
 | ------ | ----------- | --------------------------------------------------- | ------------ | ----------- | ---------- |
-| BL-001 | 🔴 Critical | Initialize Git repository and monorepo structure    | None         | 1h          | ⬜ Todo    |
-| BL-002 | 🔴 Critical | Create FastAPI backend skeleton with health endpoint | BL-001       | 2h          | ⬜ Todo    |
-| BL-003 | 🔴 Critical | Create React + Vite frontend skeleton               | BL-001       | 2h          | ⬜ Todo    |
-| BL-004 | 🔴 Critical | Create Docker Compose (all services)                | BL-002, BL-003 | 3h        | ⬜ Todo    |
-| BL-005 | 🟠 High     | Configure Alembic for database migrations           | BL-002       | 1h          | ⬜ Todo    |
-| BL-006 | 🟠 High     | Set up structured logging (structlog)               | BL-002       | 1h          | ⬜ Todo    |
-| BL-007 | 🟠 High     | Configure CORS middleware                           | BL-002       | 30m         | ⬜ Todo    |
-| BL-008 | 🟠 High     | Create global error handler middleware              | BL-002       | 1h          | ⬜ Todo    |
-| BL-009 | 🟠 High     | Create React app shell (router, layout)             | BL-003       | 2h          | ⬜ Todo    |
-| BL-010 | 🟠 High     | Set up pre-commit hooks (Ruff, ESLint, Prettier)    | BL-001       | 1h          | ⬜ Todo    |
-| BL-011 | 🟠 High     | Create GitHub Actions CI workflow                   | BL-001       | 2h          | ⬜ Todo    |
-| BL-012 | 🟡 Medium   | Write backend smoke test (health endpoint)          | BL-002       | 30m         | ⬜ Todo    |
-| BL-013 | 🟡 Medium   | Write frontend smoke test (app renders)             | BL-003       | 30m         | ⬜ Todo    |
-| BL-014 | 🟡 Medium   | Configure Pydantic BaseSettings for .env loading    | BL-002       | 30m         | ⬜ Todo    |
+| BL-001 | 🔴 Critical | Initialize Git repository and monorepo structure    | None         | 1h          | ✅ Done    |
+| BL-002 | 🔴 Critical | Create FastAPI backend skeleton with health endpoint | BL-001       | 2h          | ✅ Done    |
+| BL-003 | 🔴 Critical | Create React + Vite frontend skeleton               | BL-001       | 2h          | ✅ Done    |
+| BL-004 | 🔴 Critical | Create Docker Compose (all services)                | BL-002, BL-003 | 3h        | ✅ Done    |
+| BL-005 | 🟠 High     | Configure Alembic for database migrations           | BL-002       | 1h          | ✅ Done    |
+| BL-006 | 🟠 High     | Set up structured logging (structlog)               | BL-002       | 1h          | ✅ Done    |
+| BL-007 | 🟠 High     | Configure CORS middleware                           | BL-002       | 30m         | ✅ Done    |
+| BL-008 | 🟠 High     | Create global error handler middleware              | BL-002       | 1h          | ✅ Done    |
+| BL-009 | 🟠 High     | Create React app shell (router, layout)             | BL-003       | 2h          | ✅ Done    |
+| BL-010 | 🟠 High     | Set up pre-commit hooks (Ruff, ESLint, Prettier)    | BL-001       | 1h          | ✅ Done    |
+| BL-011 | 🟠 High     | Create GitHub Actions CI workflow                   | BL-001       | 2h          | ✅ Done    |
+| BL-012 | 🟡 Medium   | Write backend smoke test (health endpoint)          | BL-002       | 30m         | ✅ Done    |
+| BL-013 | 🟡 Medium   | Write frontend smoke test (app renders)             | BL-003       | 30m         | ✅ Done    |
+| BL-014 | 🟡 Medium   | Configure Pydantic BaseSettings for .env loading    | BL-002       | 30m         | ✅ Done    |
 
 ---
 
@@ -49,22 +49,22 @@
 
 | ID     | Priority    | Description                                         | Dependencies | Est. Effort | Status     |
 | ------ | ----------- | --------------------------------------------------- | ------------ | ----------- | ---------- |
-| BL-020 | 🔴 Critical | Collect and clean fake news datasets (EN, HI)       | None         | 4h          | ⬜ Todo    |
-| BL-021 | 🔴 Critical | Create dataset preprocessing pipeline               | BL-020       | 3h          | ⬜ Todo    |
-| BL-022 | 🔴 Critical | Fine-tune XLM-RoBERTa for fake news detection       | BL-021       | 8h          | ⬜ Todo    |
-| BL-023 | 🔴 Critical | Fine-tune XLM-RoBERTa for sentiment analysis        | BL-021       | 6h          | ⬜ Todo    |
-| BL-024 | 🔴 Critical | Implement ModelRegistry (singleton, loading, caching) | BL-002      | 3h          | ⬜ Todo    |
-| BL-025 | 🔴 Critical | Implement FakeNewsDetector service                   | BL-022, BL-024 | 3h       | ⬜ Todo    |
-| BL-026 | 🔴 Critical | Implement SentimentAnalyzer service                  | BL-023, BL-024 | 3h       | ⬜ Todo    |
-| BL-027 | 🟠 High     | Implement LanguageDetector service (langdetect)      | BL-002       | 1h          | ⬜ Todo    |
-| BL-028 | 🟠 High     | Implement AnalysisOrchestrator                       | BL-025, BL-026, BL-027 | 3h | ⬜ Todo |
-| BL-029 | 🟠 High     | Create POST /api/v1/analyze/text endpoint            | BL-028       | 2h          | ⬜ Todo    |
-| BL-030 | 🟠 High     | Create analysis_results DB table + migration         | BL-005       | 1h          | ⬜ Todo    |
-| BL-031 | 🟡 Medium   | Evaluate models and document results                 | BL-022, BL-023 | 2h       | ⬜ Todo    |
-| BL-032 | 🟡 Medium   | Create GET /api/v1/languages endpoint                | BL-027       | 30m         | ⬜ Todo    |
-| BL-033 | 🟡 Medium   | Create GET /api/v1/models endpoint                   | BL-024       | 30m         | ⬜ Todo    |
-| BL-034 | 🟡 Medium   | Write AI module unit tests                           | BL-025, BL-026 | 3h       | ⬜ Todo    |
-| BL-035 | 🟡 Medium   | Augment datasets for ES, FR, AR (translation)        | BL-020       | 4h          | ⬜ Todo    |
+| BL-020 | 🔴 Critical | Collect and clean fake news datasets (EN, HI)       | None         | 4h          | ✅ Done    |
+| BL-021 | 🔴 Critical | Create dataset preprocessing pipeline               | BL-020       | 3h          | ✅ Done    |
+| BL-022 | 🔴 Critical | Fine-tune XLM-RoBERTa for fake news detection       | BL-021       | 8h          | ✅ Done    |
+| BL-023 | 🔴 Critical | Fine-tune XLM-RoBERTa for sentiment analysis        | BL-021       | 6h          | ✅ Done    |
+| BL-024 | 🔴 Critical | Implement ModelRegistry (singleton, loading, caching) | BL-002      | 3h          | ✅ Done    |
+| BL-025 | 🔴 Critical | Implement FakeNewsDetector service                   | BL-022, BL-024 | 3h       | ✅ Done    |
+| BL-026 | 🔴 Critical | Implement SentimentAnalyzer service                  | BL-023, BL-024 | 3h       | ✅ Done    |
+| BL-027 | 🟠 High     | Implement LanguageDetector service (langdetect)      | BL-002       | 1h          | ✅ Done    |
+| BL-028 | 🟠 High     | Implement AnalysisOrchestrator                       | BL-025, BL-026, BL-027 | 3h | ✅ Done    |
+| BL-029 | 🟠 High     | Create POST /api/v1/analyze/text endpoint            | BL-028       | 2h          | ✅ Done    |
+| BL-030 | 🟠 High     | Create analysis_results DB table + migration         | BL-005       | 1h          | ✅ Done    |
+| BL-031 | 🟡 Medium   | Evaluate models and document results                 | BL-022, BL-023 | 2h       | ✅ Done    |
+| BL-032 | 🟡 Medium   | Create GET /api/v1/languages endpoint                | BL-027       | 30m         | ✅ Done    |
+| BL-033 | 🟡 Medium   | Create GET /api/v1/models endpoint                   | BL-024       | 30m         | ✅ Done    |
+| BL-034 | 🟡 Medium   | Write AI module unit tests                           | BL-025, BL-026 | 3h       | ✅ Done    |
+| BL-035 | 🟡 Medium   | Augment datasets for ES, FR, AR (translation)        | BL-020       | 4h          | ✅ Done    |
 
 ---
 
@@ -72,24 +72,24 @@
 
 | ID     | Priority    | Description                                         | Dependencies | Est. Effort | Status     |
 | ------ | ----------- | --------------------------------------------------- | ------------ | ----------- | ---------- |
-| BL-040 | 🔴 Critical | Create users table + migration                      | BL-005       | 1h          | ⬜ Todo    |
-| BL-041 | 🔴 Critical | Implement auth service (register, login, JWT)        | BL-040       | 4h          | ⬜ Todo    |
-| BL-042 | 🔴 Critical | Implement refresh token rotation                     | BL-041       | 2h          | ⬜ Todo    |
-| BL-043 | 🔴 Critical | Implement RBAC middleware                            | BL-041       | 2h          | ⬜ Todo    |
-| BL-044 | 🔴 Critical | Create auth API endpoints (7 routes)                 | BL-041       | 3h          | ⬜ Todo    |
-| BL-045 | 🔴 Critical | Build Login page                                     | BL-009       | 3h          | ⬜ Todo    |
-| BL-046 | 🔴 Critical | Build Register page                                  | BL-009       | 2h          | ⬜ Todo    |
-| BL-047 | 🔴 Critical | Build authenticated layout (sidebar, header)         | BL-009       | 3h          | ⬜ Todo    |
-| BL-048 | 🔴 Critical | Build Analysis page (text input form)                | BL-047       | 4h          | ⬜ Todo    |
-| BL-049 | 🔴 Critical | Build Results display component                      | BL-048       | 4h          | ⬜ Todo    |
-| BL-050 | 🟠 High     | Build History page (paginated table)                 | BL-047       | 3h          | ⬜ Todo    |
-| BL-051 | 🟠 High     | Implement Redis caching for analysis results         | BL-029       | 2h          | ⬜ Todo    |
-| BL-052 | 🟠 High     | Build User Profile page                              | BL-047       | 2h          | ⬜ Todo    |
-| BL-053 | 🟠 High     | Create history API endpoints (3 routes)              | BL-030       | 2h          | ⬜ Todo    |
-| BL-054 | 🟠 High     | Connect frontend to all backend endpoints            | BL-044, BL-048 | 3h       | ⬜ Todo    |
-| BL-055 | 🟡 Medium   | Implement Axios interceptor for JWT refresh          | BL-054       | 1h          | ⬜ Todo    |
-| BL-056 | 🟡 Medium   | Write auth flow tests (backend)                      | BL-044       | 3h          | ⬜ Todo    |
-| BL-057 | 🟡 Medium   | Write frontend component tests                      | BL-048, BL-049 | 3h       | ⬜ Todo    |
+| BL-040 | 🔴 Critical | Create users table + migration                      | BL-005       | 1h          | ✅ Done    |
+| BL-041 | 🔴 Critical | Implement auth service (register, login, JWT)        | BL-040       | 4h          | ✅ Done    |
+| BL-042 | 🔴 Critical | Implement refresh token rotation                     | BL-041       | 2h          | ✅ Done    |
+| BL-043 | 🔴 Critical | Implement RBAC middleware                            | BL-041       | 2h          | ✅ Done    |
+| BL-044 | 🔴 Critical | Create auth API endpoints (7 routes)                 | BL-041       | 3h          | ✅ Done    |
+| BL-045 | 🔴 Critical | Build Login page                                     | BL-009       | 3h          | ✅ Done    |
+| BL-046 | 🔴 Critical | Build Register page                                  | BL-009       | 2h          | ✅ Done    |
+| BL-047 | 🔴 Critical | Build authenticated layout (sidebar, header)         | BL-009       | 3h          | ✅ Done    |
+| BL-048 | 🔴 Critical | Build Analysis page (text input form)                | BL-047       | 4h          | ✅ Done    |
+| BL-049 | 🔴 Critical | Build Results display component                      | BL-048       | 4h          | ✅ Done    |
+| BL-050 | 🟠 High     | Build History page (paginated table)                 | BL-047       | 3h          | ✅ Done    |
+| BL-051 | 🟠 High     | Implement Redis caching for analysis results         | BL-029       | 2h          | ✅ Done    |
+| BL-052 | 🟠 High     | Build User Profile page                              | BL-047       | 2h          | ✅ Done    |
+| BL-053 | 🟠 High     | Create history API endpoints (3 routes)              | BL-030       | 2h          | ✅ Done    |
+| BL-054 | 🟠 High     | Connect frontend to all backend endpoints            | BL-044, BL-048 | 3h       | ✅ Done    |
+| BL-055 | 🟡 Medium   | Implement Axios interceptor for JWT refresh          | BL-054       | 1h          | ✅ Done    |
+| BL-056 | 🟡 Medium   | Write auth flow tests (backend)                      | BL-044       | 3h          | ✅ Done    |
+| BL-057 | 🟡 Medium   | Write frontend component tests                      | BL-048, BL-049 | 3h       | ✅ Done    |
 
 ---
 
@@ -97,20 +97,20 @@
 
 | ID     | Priority    | Description                                         | Dependencies | Est. Effort | Status     |
 | ------ | ----------- | --------------------------------------------------- | ------------ | ----------- | ---------- |
-| BL-060 | 🔴 Critical | Implement LIME wrapper for fake news model           | BL-025       | 4h          | ⬜ Todo    |
-| BL-061 | 🔴 Critical | Implement attention weight extraction                | BL-025       | 2h          | ⬜ Todo    |
-| BL-062 | 🟠 High     | Implement Tesseract OCR wrapper                      | BL-002       | 3h          | ⬜ Todo    |
-| BL-063 | 🟠 High     | Implement image preprocessing pipeline               | BL-062       | 2h          | ⬜ Todo    |
-| BL-064 | 🟠 High     | Implement URL scraper (newspaper3k + BS4)            | BL-002       | 3h          | ⬜ Todo    |
-| BL-065 | 🟠 High     | Implement text cleaner / normalizer                  | BL-002       | 2h          | ⬜ Todo    |
-| BL-066 | 🟠 High     | Implement translation service (OPUS-MT)              | BL-024       | 4h          | ⬜ Todo    |
-| BL-067 | 🟠 High     | Implement summarization service                      | BL-024       | 3h          | ⬜ Todo    |
-| BL-068 | 🟠 High     | Create URL and image analysis API endpoints          | BL-064, BL-062 | 3h       | ⬜ Todo    |
-| BL-069 | 🟠 High     | Build tabbed input UI (Text / URL / Image)           | BL-048       | 3h          | ⬜ Todo    |
-| BL-070 | 🟠 High     | Build XAI visualization (word highlighting)          | BL-049       | 4h          | ⬜ Todo    |
-| BL-071 | 🟡 Medium   | Build image upload with drag-and-drop                | BL-069       | 2h          | ⬜ Todo    |
-| BL-072 | 🟡 Medium   | Build attention heatmap display                      | BL-070       | 3h          | ⬜ Todo    |
-| BL-073 | 🟡 Medium   | Build confidence meter (gauge component)             | BL-049       | 2h          | ⬜ Todo    |
+| BL-060 | 🔴 Critical | Implement Gradient × Input token attribution (ADR-016)| BL-025       | 4h          | ✅ Done    |
+| BL-061 | 🔴 Critical | Implement token attribution extraction & signed map  | BL-025       | 2h          | ✅ Done    |
+| BL-062 | 🟠 High     | Implement Tesseract OCR wrapper (in-memory, ADR-015) | BL-002       | 3h          | ✅ Done    |
+| BL-063 | 🟠 High     | Implement image preprocessing pipeline               | BL-062       | 2h          | ✅ Done    |
+| BL-064 | 🟠 High     | Implement URL scraper (SSRF defenses, ADR-014)       | BL-002       | 3h          | ✅ Done    |
+| BL-065 | 🟠 High     | Implement text cleaner / normalizer                  | BL-002       | 2h          | ✅ Done    |
+| BL-066 | 🟠 High     | Implement translation service (MyMemory, ADR-017)    | BL-024       | 4h          | ✅ Done    |
+| BL-067 | 🟠 High     | Implement summarization / content extraction         | BL-024       | 3h          | ✅ Done    |
+| BL-068 | 🟠 High     | Create URL and image analysis API endpoints          | BL-064, BL-062 | 3h       | ✅ Done    |
+| BL-069 | 🟠 High     | Build tabbed input UI (Text / URL / Image)           | BL-048       | 3h          | ✅ Done    |
+| BL-070 | 🟠 High     | Build XAI visualization (word highlighting)          | BL-049       | 4h          | ✅ Done    |
+| BL-071 | 🟡 Medium   | Build image upload with drag-and-drop                | BL-069       | 2h          | ✅ Done    |
+| BL-072 | 🟡 Medium   | Build attribution heatmap & explanation display      | BL-070       | 3h          | ✅ Done    |
+| BL-073 | 🟡 Medium   | Build confidence meter (gauge component)             | BL-049       | 2h          | ✅ Done    |
 
 ---
 
@@ -118,9 +118,9 @@
 
 | ID     | Priority    | Description                                         | Dependencies | Est. Effort | Status     |
 | ------ | ----------- | --------------------------------------------------- | ------------ | ----------- | ---------- |
-| BL-080 | 🟠 High     | Implement analytics aggregation queries              | BL-030       | 3h          | ⬜ Todo    |
-| BL-081 | 🟠 High     | Create analytics API endpoints (3 routes)            | BL-080       | 2h          | ⬜ Todo    |
-| BL-082 | 🟠 High     | Build analytics dashboard (Recharts)                 | BL-081       | 6h          | ⬜ Todo    |
+| BL-080 | 🟠 High     | Implement analytics aggregation queries              | BL-030       | 3h          | ✅ Done    |
+| BL-081 | 🟠 High     | Create analytics API endpoints (/dashboard/summary) | BL-080       | 2h          | ✅ Done    |
+| BL-082 | 🟠 High     | Build analytics dashboard (Recharts)                 | BL-081       | 6h          | ✅ Done    |
 | BL-083 | 🟠 High     | Implement admin user management service              | BL-043       | 3h          | ⬜ Todo    |
 | BL-084 | 🟠 High     | Create admin API endpoints (4 routes)                | BL-083       | 2h          | ⬜ Todo    |
 | BL-085 | 🟠 High     | Build admin panel UI                                 | BL-084       | 4h          | ⬜ Todo    |

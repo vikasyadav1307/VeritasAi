@@ -605,6 +605,18 @@ Step 4: Add service discovery and circuit breakers
 | ADR-003 | PostgreSQL over MongoDB | ✅ Accepted |
 | ADR-004 | Feature-based frontend structure | ✅ Accepted |
 | ADR-005 | HuggingFace Inference API as GPU fallback | ✅ Accepted |
+| ADR-006 | XLM-RoBERTa as Backbone NLP Model | ✅ Accepted |
+| ADR-007 | React + Vite + TypeScript Frontend | ✅ Accepted |
+| ADR-008 | PostgreSQL + SQLAlchemy Async + Alembic | ✅ Accepted |
+| ADR-009 | Redis for Caching & Rate Limiting | ✅ Accepted |
+| ADR-010 | Docker Multi-Stage Builds | ✅ Accepted |
+| ADR-011 | Server-Side Aggregations for Analytics Dashboard | ✅ Accepted |
+| ADR-012 | Zero-Knowledge Fallback Engine with Deterministic Pseudo-Probabilities | ✅ Accepted |
+| ADR-013 | Stateful Refresh-Token Rotation with Asymmetric HttpOnly Security | ✅ Accepted |
+| ADR-014 | Multi-Layer SSRF Defense for URL Scraping | ✅ Accepted |
+| ADR-015 | In-Memory Bounded Streams & Dynamic Discovery for OCR Processing | ✅ Accepted |
+| ADR-016 | Single-Pass Gradient × Input Token Attribution for Explainability | ✅ Accepted |
+| ADR-017 | Deterministic Language Detection & Presentation-Layer Translation | ✅ Accepted |
 
 ---
 
@@ -620,8 +632,9 @@ Step 4: Add service discovery and circuit breakers
 
 ---
 
-*Document Version: 1.0.0*
+*Document Version: 1.1.0*
 *Created: 2026-08-05*
+*Last Updated: 2026-09-11*
 *Author: Vikas (Principal Architect)*
-*Status: DRAFT — Awaiting Approval*
-*Depends On: 00_PROJECT_VISION.md (Approved)*
+*Status: Active*
+*Depends On: 00_PROJECT_VISION.md (Active)*

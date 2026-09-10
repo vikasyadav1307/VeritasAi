@@ -5,37 +5,37 @@
 | Field              | Value                                                              |
 | ------------------ | ------------------------------------------------------------------ |
 | **Document ID**    | DOC-14                                                             |
-| **Version**        | 1.0.0                                                              |
-| **Status**         | Draft                                                              |
+| **Version**        | 1.1.0                                                              |
+| **Status**         | Active                                                             |
 | **Author**         | Vikas (Lead / Architect)                                           |
 | **Created**        | 2026-08-13                                                         |
-| **Last Updated**   | 2026-08-13                                                         |
+| **Last Updated**   | 2026-09-11                                                         |
 
 ---
 
-## 1. Testing Pyramid
+## 1. Testing Pyramid & Verification Status
 
 ```
             ╱╲
            ╱  ╲
-          ╱ E2E ╲           5–10 tests     (Playwright)
+          ╱ E2E ╲           Phase 6 Target (Playwright)
          ╱  Tests ╲
         ╱──────────╲
-       ╱ Integration ╲      20–40 tests    (pytest + httpx / RTL)
+       ╱ Integration ╲      133 passing tests (pytest + httpx)
       ╱    Tests      ╲
      ╱──────────────────╲
-    ╱    Unit Tests       ╲  100+ tests    (pytest / vitest)
+    ╱    Unit / Vitest    ╲  17 passing tests (vitest + RTL)
    ╱________________________╲
 ```
 
-| Level        | Tools                       | Coverage Target | Run Frequency     |
-| ------------ | --------------------------- | --------------- | ----------------- |
-| Unit         | pytest, vitest              | 80% (BE), 70% (FE) | Every commit  |
-| Integration  | pytest + httpx, RTL         | Critical paths  | Every commit      |
-| E2E          | Playwright                  | 5–10 user flows | Push to main      |
-| Performance  | Locust / k6                 | Baselines       | Pre-release       |
-| Security     | OWASP ZAP, pip-audit        | 0 Critical/High | Pre-release       |
-| AI/ML        | Custom evaluation scripts   | F1 targets      | Model changes     |
+| Level        | Tools                       | Implemented Count | Pass Rate | Run Command                                         |
+| ------------ | --------------------------- | ----------------- | --------- | --------------------------------------------------- |
+| Backend Int. | pytest + httpx.AsyncClient  | 133 tests         | 100%      | `pytest backend/tests/integration`                  |
+| Frontend UI  | Vitest + RTL + jsdom        | 17 tests          | 100%      | `cd frontend && npx vitest run`                     |
+| E2E          | Playwright                  | Planned (Phase 6) | —         | `npx playwright test`                               |
+| Performance  | Locust / k6                 | Planned (Phase 7) | —         | Pre-release benchmark                               |
+| Security     | OWASP ZAP, bandit           | Continuous        | Passed    | SSRF defenses, bounded streams, magic byte checks   |
+| AI/ML        | Custom evaluation scripts   | F1 targets        | —         | Model changes                                       |
 
 ---
 
@@ -240,35 +240,29 @@
 ```
 backend/
 ├── tests/
-│   ├── conftest.py                 # Shared fixtures, DB setup
-│   ├── unit/
-│   │   ├── test_auth_service.py
-│   │   ├── test_analysis_service.py
-│   │   ├── test_text_cleaner.py
-│   │   └── ...
-│   ├── integration/
-│   │   ├── test_auth_endpoints.py
-│   │   ├── test_analysis_endpoints.py
-│   │   ├── test_history_endpoints.py
-│   │   └── ...
-│   ├── ai/
-│   │   ├── test_model_evaluation.py
-│   │   ├── test_inference_latency.py
-│   │   └── test_edge_cases.py
-│   └── factories/
-│       ├── user_factory.py
-│       └── analysis_factory.py
+│   ├── conftest.py                     # Shared async fixtures, test DB session, test client
+│   └── integration/
+│       ├── test_health.py              # Health check endpoints
+│       ├── test_auth.py                # Register, login, refresh, profile, logout (16 tests)
+│       ├── test_analysis.py            # Text analysis pipeline, DB persistence, edge cases
+│       ├── test_analysis_validation.py # Schema validation, min length, content checks
+│       ├── test_url_analysis.py        # URL scraping, multi-layer SSRF defenses (15+ tests)
+│       ├── test_image_analysis.py      # Multipart upload, OCR stream bounds, magic bytes (15+ tests)
+│       ├── test_explainability.py      # Gradient × Input attribution, token weights (15+ tests)
+│       └── test_translation.py         # MyMemory provider, caching, language detection (15+ tests)
 
 frontend/
 ├── src/
-│   ├── features/auth/
-│   │   ├── LoginPage.tsx
-│   │   └── LoginPage.test.tsx       # Co-located
-│   └── components/ui/
-│       ├── Button.tsx
-│       └── Button.test.tsx          # Co-located
+│   ├── app/
+│   │   └── App.test.tsx                # App shell, routing, smoke render
+│   └── features/
+│       └── analyze/
+│           └── pages/
+│               ├── AnalyzePage.test.tsx      # Tabbed inputs (Text/URL/Image), form validation
+│               ├── Explainability.test.tsx   # Word attribution highlights, token inspection
+│               └── Translation.test.tsx      # Language selector, target translation, cache hit
 
-e2e/
+e2e/                                    # Target Phase 6
 ├── tests/
 │   ├── auth.spec.ts
 │   ├── analysis.spec.ts

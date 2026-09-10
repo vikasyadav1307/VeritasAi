@@ -91,22 +91,22 @@ Deliver a modular AI platform that:
 
 ### 6.2 Feature Breakdown
 
-| # | Feature | Description | Priority |
-|---|---|---|---|
-| F-01 | **Fake News Detection** | Classify text as Real / Fake / Uncertain with confidence score | Critical |
-| F-02 | **Multilingual Support** | Support 10+ languages via multilingual transformers (XLM-R, mBERT) | Critical |
-| F-03 | **Sentiment Analysis** | Detect sentiment (positive, negative, neutral) and emotions (anger, fear, joy, etc.) | Critical |
-| F-04 | **Explainable AI** | Provide LIME/SHAP explanations, attention heatmaps, and reasoning traces | High |
-| F-05 | **URL Analysis** | Scrape article content from URL, extract metadata, and analyze | High |
-| F-06 | **OCR Support** | Extract text from images (screenshots, memes) for analysis | High |
-| F-07 | **Translation** | Translate input/output across supported languages | High |
-| F-08 | **Summarization** | Generate concise summaries of long articles | Medium |
-| F-09 | **Authentication** | User registration, login, JWT-based sessions, OAuth | High |
-| F-10 | **Analysis History** | Store and retrieve past analyses per user | Medium |
-| F-11 | **Analytics Dashboard** | Visualize trends, language distribution, sentiment patterns | Medium |
-| F-12 | **Export & Reporting** | Export results as PDF / CSV / JSON | Low |
-| F-13 | **Rate Limiting & Abuse Prevention** | Protect public APIs from misuse | High |
-| F-14 | **Admin Panel** | Manage users, view system health, moderate content | Low |
+| # | Feature | Description | Priority | Status |
+|---|---|---|---|---|
+| F-01 | **Fake News Detection** | Classify text as Real / Fake / Uncertain with confidence score | Critical | ✅ Complete |
+| F-02 | **Multilingual Support** | Support 14 languages via multilingual transformer (XLM-RoBERTa) | Critical | ✅ Complete |
+| F-03 | **Sentiment Analysis** | Detect sentiment (positive, negative, neutral) with confidence scores | Critical | ✅ Complete |
+| F-04 | **Explainable AI** | Provide Gradient × Input token attributions & supporting/opposing tokens | High | ✅ Complete |
+| F-05 | **URL Analysis** | Scrape article content from URL, multi-layer SSRF defenses, and analyze | High | ✅ Complete |
+| F-06 | **OCR Support** | Extract text from images (bounded stream, Pillow bomb protection, Tesseract) | High | ✅ Complete |
+| F-07 | **Translation** | On-demand presentation translation across 14 languages (MyMemory + caching) | High | ✅ Complete |
+| F-08 | **Summarization** | Extract lead text and content preview for analysis | Medium | ✅ Complete |
+| F-09 | **Authentication** | User registration, login, JWT-based sessions, refresh token rotation | High | ✅ Complete |
+| F-10 | **Analysis History** | Store and retrieve past analyses per user with IDOR prevention | Medium | ✅ Complete |
+| F-11 | **Analytics Dashboard** | SQL aggregations, language distribution, sentiment patterns (Recharts) | Medium | ✅ Complete |
+| F-12 | **Export & Reporting** | Export results as PDF / CSV / JSON | Low | ⬜ Planned (Phase 4) |
+| F-13 | **Rate Limiting & Abuse Prevention** | Protect public APIs from misuse | High | ⬜ Planned (Phase 4) |
+| F-14 | **Admin Panel** | Manage users, view system health, moderate content | Low | ⬜ Planned (Phase 4) |
 
 ---
 
@@ -243,30 +243,31 @@ These may be considered for future versions and are documented in the backlog.
 
 | # | Document | Purpose | Status |
 |---|---|---|---|
-| 00 | `PROJECT_VISION.md` | This document — project scope, goals, and identity | ✅ Draft |
-| 01 | `ARCHITECTURE.md` | System architecture, component design, data flow | ⬜ Pending |
-| 02 | `TECH_STACK.md` | Technology choices with rationale | ⬜ Pending |
-| 03 | `DEVELOPMENT_ROADMAP.md` | Phased delivery plan with milestones | ⬜ Pending |
-| 04 | `DATABASE_DESIGN.md` | Schema design, ERD, migration strategy | ⬜ Pending |
-| 05 | `API_SPECIFICATION.md` | REST API contracts and endpoint documentation | ⬜ Pending |
-| 06 | `AI_PIPELINE.md` | ML model architecture, training, inference pipeline | ⬜ Pending |
-| 07 | `UI_UX_DESIGN.md` | Wireframes, component hierarchy, design system | ⬜ Pending |
-| 08 | `CODING_GUIDELINES.md` | Standards, conventions, and best practices | ⬜ Pending |
-| 09 | `PROGRESS_LOG.md` | Sprint-level progress tracking | ⬜ Pending |
-| 10 | `TECHNICAL_DECISIONS.md` | ADR-style decision log | ⬜ Pending |
-| 11 | `BACKLOG.md` | Prioritized feature/bug backlog | ⬜ Pending |
-| 12 | `CHANGELOG.md` | Version-level change history | ⬜ Pending |
-| 13 | `DEPLOYMENT_PLAN.md` | Infrastructure, CI/CD, and release strategy | ⬜ Pending |
-| 14 | `TESTING_STRATEGY.md` | Test plan, coverage targets, and tooling | ⬜ Pending |
-| 15 | `SECURITY_PLAN.md` | Threat model, auth design, and hardening | ⬜ Pending |
-| 16 | `RISK_ANALYSIS.md` | Risk register with mitigations | ⬜ Pending |
-| 17 | `FOLDER_STRUCTURE.md` | Repository layout and module organization | ⬜ Pending |
-| 18 | `PROJECT_TIMELINE.md` | Gantt-style timeline with dependencies | ⬜ Pending |
-| — | `prompts/ai_context.md` | Compact context file for AI-assisted development | ⬜ Pending |
+| 00 | `PROJECT_VISION.md` | This document — project scope, goals, and identity | ✅ Active |
+| 01 | `ARCHITECTURE.md` | System architecture, component design, data flow | ✅ Active |
+| 02 | `TECH_STACK.md` | Technology choices with rationale | ✅ Active |
+| 03 | `DEVELOPMENT_ROADMAP.md` | Phased delivery plan with milestones | ✅ Active |
+| 04 | `DATABASE_DESIGN.md` | Schema design, ERD, migration strategy | ✅ Active |
+| 05 | `API_SPECIFICATION.md` | REST API contracts and endpoint documentation | ✅ Active |
+| 06 | `AI_PIPELINE.md` | ML model architecture, training, inference pipeline | ✅ Active |
+| 07 | `UI_UX_DESIGN.md` | Wireframes, component hierarchy, design system | ✅ Active |
+| 08 | `CODING_GUIDELINES.md` | Standards, conventions, and best practices | ✅ Active |
+| 09 | `PROGRESS_LOG.md` | Sprint-level progress tracking | ✅ Active |
+| 10 | `TECHNICAL_DECISIONS.md` | ADR-style decision log | ✅ Active |
+| 11 | `BACKLOG.md` | Prioritized feature/bug backlog | ✅ Active |
+| 12 | `CHANGELOG.md` | Version-level change history | ✅ Active |
+| 13 | `DEPLOYMENT_PLAN.md` | Infrastructure, CI/CD, and release strategy | ✅ Active |
+| 14 | `TESTING_STRATEGY.md` | Test plan, coverage targets, and tooling | ✅ Active |
+| 15 | `SECURITY_PLAN.md` | Threat model, auth design, and hardening | ✅ Active |
+| 16 | `RISK_ANALYSIS.md` | Risk register with mitigations | ✅ Active |
+| 17 | `FOLDER_STRUCTURE.md` | Repository layout and module organization | ✅ Active |
+| 18 | `PROJECT_TIMELINE.md` | Gantt-style timeline with dependencies | ✅ Active |
+| — | `prompts/ai_context.md` | Compact context file for AI-assisted development | ✅ Active |
 
 ---
 
-*Document Version: 1.0.0*
+*Document Version: 1.1.0*
 *Created: 2026-08-05*
+*Last Updated: 2026-09-11*
 *Author: Vikas (Principal Architect)*
-*Status: DRAFT — Awaiting Approval*
+*Status: Active*

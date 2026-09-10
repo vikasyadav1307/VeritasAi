@@ -17,10 +17,10 @@ Codename: **VeritasAI**. Solo-developer FYP. 16-week timeline.
 
 ## Current State
 
-- **Phase**: 3 — Core Platform Features
-- **Milestone**: 3.7 — Multilingual Language Detection & Presentation Translation (Implemented & Verified, awaiting review)
-- **Status**: Full Phase 3 capabilities active: Real XLM-RoBERTa inference, history persistence, analytics dashboard, JWT authentication & IDOR defenses, SSRF-protected URL analysis, bounded in-memory OCR image analysis, token-level Gradient × Input explainability, and deterministic language detection with on-demand presentation translation. Full test suites passing: 133/133 backend tests and 17/17 frontend Vitest tests.
-- **Next**: Phase 4 — Platform & Operational Hardening (Export, Rate Limiting, Admin) or Phase 5 (ONNX runtime optimization)
+- **Phase**: 4 — Platform Features (Phases 0–3 Complete & Committed)
+- **Milestone**: 4.1 — Platform & Operational Hardening (In Progress; Dashboard Complete)
+- **Status**: Phase 0 through Phase 3 fully completed and committed (`eb7a3bd`). Full Phase 3 capabilities active: Real XLM-RoBERTa inference, history persistence, analytics dashboard (Milestone 3.2), JWT authentication & IDOR defenses, SSRF-protected URL analysis, bounded in-memory OCR image analysis, token-level Gradient × Input explainability, and deterministic language detection with on-demand presentation translation. Full test suites passing: 133/133 backend integration tests and 17/17 frontend Vitest tests.
+- **Next**: Phase 4 platform features (Export, Rate Limiting, Admin User Management) followed by Phase 5 (ONNX runtime optimization)
 
 ## Completed Work
 

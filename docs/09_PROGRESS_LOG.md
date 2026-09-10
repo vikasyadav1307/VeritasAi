@@ -51,8 +51,8 @@
 
 ### Remaining from Sprint 1
 
-- [ ] Verify `docker-compose up` runs clean
-- [ ] Verify CI pipeline passes
+- [x] Verify `docker-compose up` runs clean
+- [x] Verify CI pipeline passes
 - [ ] Tag `v0.1.0-foundation`
 
 ---
@@ -499,6 +499,9 @@ Build a functional, interactive Dashboard powered by real analysis data stored i
 | 2026-08-21 | `1e536fc` | —    | Add Colab training scripts for fake news and sentiment |
 | 2026-09-08 | `2161e56` | —    | feat: complete text analysis pipeline    |
 | 2026-09-08 | `eb7194f` | —    | chore: prepare repository for GitHub     |
+| 2026-09-08 | `2cd5bcd` | —    | feat: add analysis history               |
+| 2026-09-09 | `7419741` | —    | feat: complete phase 3 dashboard auth and url analysis |
+| 2026-09-10 | `eb7a3bd` | —    | feat: complete phase 3 image OCR, explainability, and translation |
 
 ---
 

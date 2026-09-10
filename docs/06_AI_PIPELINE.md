@@ -5,11 +5,11 @@
 | Field              | Value                                                              |
 | ------------------ | ------------------------------------------------------------------ |
 | **Document ID**    | DOC-06                                                             |
-| **Version**        | 1.0.0                                                              |
-| **Status**         | Draft                                                              |
+| **Version**        | 1.1.0                                                              |
+| **Status**         | Active                                                             |
 | **Author**         | Vikas (Lead / Architect)                                           |
 | **Created**        | 2026-08-13                                                         |
-| **Last Updated**   | 2026-08-13                                                         |
+| **Last Updated**   | 2026-09-11                                                         |
 | **Parent**         | `01_ARCHITECTURE.md`, `02_TECH_STACK.md`                           |
 
 ---
@@ -264,14 +264,17 @@ Same architecture as fake news detection with a different classification head:
    ├── Confusion matrix
    └── Generate classification report
        │
-6. Export
-   ├── Save PyTorch model (.pt)
-   ├── Save tokenizer
-   ├── Export to ONNX (Phase 5)
-   └── Log metrics to model_metadata table
-```
+### 5.4 Empirical Training Results (Google Colab Fine-Tuning 2026-09-08)
+
+Both XLM-RoBERTa models were fine-tuned using HuggingFace Trainer on Google Colab (NVIDIA T4 GPU) and exported to `models/`:
+
+| Model Task | Base Architecture | Training Epochs | Train Loss | Eval Accuracy | Macro F1 | Status |
+| ---------- | ----------------- | --------------- | ---------- | ------------- | -------- | ------ |
+| **Fake News Detection** | `xlm-roberta-base` | 3 | 0.0481 | **98.39%** | **98.39%** | ✅ Local (`models/fake_news_model/`) |
+| **Sentiment Analysis** | `xlm-roberta-base` | 3 | 0.0612 | **97.95%** | **97.94%** | ✅ Local (`models/sentiment_model/`) |
 
 ---
+
 
 ## 6. Inference Pipeline
 
@@ -395,77 +398,44 @@ PyTorch Model (.pt)
 
 ## 7. Explainable AI (XAI)
 
-### 7.1 LIME (Local Interpretable Model-agnostic Explanations)
+### 7.1 Gradient × Input Token Attribution (Active Production Method — ADR-016)
 
-**How it works:**
-1. Perturb the input text by randomly removing words.
-2. Generate predictions for each perturbed version.
-3. Fit a linear model to the perturbation-prediction pairs.
-4. Linear model coefficients = feature (word) importances.
+VeritasAI implements token-level feature attribution using **Gradient × Input** on the embedding layer targeting the predicted class logit:
 
-**Configuration:**
+$$A_i = \sum_{d=1}^{D} \left( \nabla_{E_{i,d}} L_{c^*} \right) \odot E_{i,d}$$
 
-| Parameter             | Value                          |
-| --------------------- | ------------------------------ |
-| Number of perturbations | 500                          |
-| Feature selection     | Top 10 features                |
-| Output to user        | Top 5 features                 |
-| Kernel width          | 0.75 * sqrt(num_features)      |
-| Distance metric       | Cosine                         |
+Where:
+- $c^* = \operatorname{argmax}_c P(y = c \mid \mathbf{x})$ is the winning predicted class.
+- $L_{c^*}$ is the unnormalized logit corresponding to the predicted class.
+- $E_i \in \mathbb{R}^D$ is the embedding vector for token $i$.
+- $\nabla_{E_{i,d}} L_{c^*}$ is the gradient of the predicted logit with respect to embedding dimension $d$.
 
-**Output format:**
+**Key Pipeline Characteristics:**
+1. **SentencePiece Subword Stitching:** XLM-RoBERTa uses SentencePiece tokenization where words are fragmented into subwords (prefixed with `\u2581`). The attribution engine stitches subwords into readable whole words by summing raw gradients and taking the root-mean-square of embedding vectors.
+2. **Special Token Filtering:** Non-semantic tokens (`<s>`, `</s>`, `<pad>`, `<unk>`) are excluded from output rankings.
+3. **Signed Direction Classification:**
+   - **Supporting (`direction="supporting"`, positive score):** Tokens whose presence pushed the model logit toward the predicted class.
+   - **Opposing (`direction="opposing"`, negative score):** Tokens whose presence pushed the model logit away from the predicted class.
+4. **Normalized Magnitude:** Token scores are normalized into $[0.0, 1.0]$ relative to the peak attribution token for rendering contrast in the UI token heatmap cloud.
 
-```json
-{
-  "feature_importances": [
-    {"word": "shocking", "weight": 0.82, "direction": "fake"},
-    {"word": "confirmed", "weight": 0.65, "direction": "real"}
-  ],
-  "prediction_probabilities": {"real": 0.23, "fake": 0.77}
-}
-```
+**Latency & Execution Mode:**
+- **On-Demand:** Executed exclusively via authenticated `POST /api/v1/explain/text` or user trigger in the UI, keeping base inference fast.
+- **Measured CPU Latency:** ~260–270 ms per model (~520 ms total pipeline wall-clock time), representing a **< 1.0x** overhead compared to forward inference on CPU.
 
-### 7.2 Attention Visualization
+### 7.2 Why LIME and KernelSHAP Were Superseded
 
-Extract attention weights from the last transformer layer to show which tokens the model focused on.
+| Evaluation Metric | LIME / KernelSHAP | Gradient × Input (Chosen) |
+| ----------------- | ----------------- | ------------------------- |
+| **Passes Required** | 500+ forward evaluations | 1 forward + 1 backward pass |
+| **CPU Latency** | 15.0 – 30.0+ seconds | **~0.52 seconds total** |
+| **Determinism** | Stochastic (sampling variance) | **Deterministic** |
+| **Subword Handling** | Distorts tokenizer chunks | **Accurate embedding backprop** |
 
-**Method:**
-1. Run a forward pass with `output_attentions=True`.
-2. Extract attention from the last layer, first head (or averaged across heads).
-3. Map attention weights back to original tokens.
-4. Normalize weights to [0, 1] range.
+### 7.3 Educational Framing & Non-Causal Disclaimers
 
-**Output format:**
+All explanation responses and UI panels are strictly accompanied by an educational disclaimer:
+> *"Feature attribution highlights tokens that mathematically influenced the model's sensitivity for this specific classification. Attribution does not constitute factual fact-checking, editorial verification, or causal proof."*
 
-```json
-{
-  "layer": 11,
-  "head": "averaged",
-  "tokens": ["[CLS]", "breaking", "news", "..."],
-  "weights": [0.02, 0.18, 0.05, 0.03]
-}
-```
-
-### 7.3 SHAP (Optional / Stretch)
-
-SHAP provides theoretically grounded feature attributions based on Shapley values. It's more computationally expensive than LIME but more consistent.
-
-| Property         | Value                              |
-| ---------------- | ---------------------------------- |
-| Method           | `shap.Explainer` (partition-based) |
-| Masker           | Text masker (word-level)           |
-| Max evaluations  | 500                                |
-| Fallback         | Skip SHAP if inference > 5s        |
-
-### 7.4 XAI Performance Budget
-
-| Method    | Target Latency | Included By Default | Notes                                   |
-| --------- | -------------- | ------------------- | --------------------------------------- |
-| LIME      | ≤ 2s           | Yes                 | Primary explanation method              |
-| Attention | ≤ 100ms        | Yes                 | Extracted during main inference pass    |
-| SHAP      | ≤ 5s           | No (opt-in)         | Only when explicitly requested          |
-
----
 
 ## 8. Input Processing
 
@@ -505,99 +475,108 @@ Raw Text
 
 **Important**: We do NOT remove stop words or apply stemming — transformer models benefit from full context.
 
-### 8.2 URL Scraping Pipeline
+### 8.2 URL Scraping & Multi-Layer SSRF Defense (ADR-014)
 
 ```
 URL Input
    │
    ▼
-┌──────────────────┐
-│ URL Validation    │  Valid HTTP(S); not in blocklist
-└──────┬───────────┘
-       ▼
-┌──────────────────┐
-│ HTTP Request      │  httpx with 10s timeout, follow redirects
-└──────┬───────────┘
-       ▼
-┌──────────────────┐
-│ Article Extraction│  newspaper3k: title + body + publish_date
-└──────┬───────────┘
-       ▼
-┌──────────────────┐
-│ Fallback: BS4     │  If newspaper3k fails, use BeautifulSoup
-└──────┬───────────┘
-       ▼
-┌──────────────────┐
-│ Text Preprocess   │  Same pipeline as raw text (§8.1)
-└──────────────────┘
-       │
-       ▼
-   Cleaned Article Text + Metadata
+┌──────────────────────────────────────┐
+│ Multi-Layer SSRF Validation Engine   │  Protocol check (HTTP/HTTPS only)
+│                                      │  Async DNS resolution via getaddrinfo
+│                                      │  Blocks 127.0.0.0/8, 10.0.0.0/8, 172.16.0.0/12,
+│                                      │  192.168.0.0/16, 169.254.0.0/16, CGNAT, .local
+└──────────────────┬───────────────────┘
+                   ▼
+┌──────────────────────────────────────┐
+│ Safe HTTP Streaming Fetcher          │  httpx AsyncClient, 15s total timeout
+│                                      │  Manual redirect hop inspection & re-validation
+│                                      │  Strict 5 MB content size cap
+│                                      │  MIME verification: text/html, application/xhtml+xml
+└──────────────────┬───────────────────┘
+                   ▼
+┌──────────────────────────────────────┐
+│ Article Extraction (BeautifulSoup)   │  Strips scripts, styles, forms, headers, navs
+│                                      │  Extracts title, clean body, canonical link
+└──────────────────┬───────────────────┘
+                   ▼
+   Cleaned Article Text (≥ 50 chars) + Metadata
 ```
 
-**URL Blocklist:** Disallow `localhost`, private IPs, known SSRF targets.
-
-### 8.3 OCR Pipeline
+### 8.3 In-Memory OCR Ingestion & Processing (ADR-015)
 
 ```
-Image Upload
+Image Upload (Multipart)
    │
    ▼
-┌──────────────────┐
-│ Format Validation │  JPEG, PNG, WebP only; max 10 MB
-└──────┬───────────┘
-       ▼
-┌──────────────────┐
-│ Image Preprocess  │  Pillow: resize (if >4K), grayscale, threshold
-└──────┬───────────┘
-       ▼
-┌──────────────────┐
-│ Tesseract OCR     │  pytesseract with language hints
-└──────┬───────────┘
-       ▼
-┌──────────────────┐
-│ Confidence Filter │  Reject if avg confidence < 60%
-└──────┬───────────┘
-       ▼
-┌──────────────────┐
-│ Text Preprocess   │  Same pipeline as raw text (§8.1)
-└──────────────────┘
-       │
-       ▼
-   Extracted Text + OCR Confidence
+┌──────────────────────────────────────┐
+│ Bounded Stream Reader & Magic Bytes  │  Stream read capped at 10 MB in 64 KB chunks
+│                                      │  Strict magic byte verification (JPEG, PNG, WEBP)
+│                                      │  Rejects PDF, SVG, HTML, PE, ELF, ZIP, TAR
+└──────────────────┬───────────────────┘
+                   ▼
+┌──────────────────────────────────────┐
+│ In-Memory Image Preprocessing        │  io.BytesIO memory buffer (zero disk I/O)
+│                                      │  Decompression bomb guard (MAX_IMAGE_PIXELS = 25M)
+│                                      │  EXIF orientation normalization
+│                                      │  Grayscale conversion & contrast enhancement
+│                                      │  Lanczos upscaling for small text
+└──────────────────┬───────────────────┘
+                   ▼
+┌──────────────────────────────────────┐
+│ Dynamic Tesseract Discovery          │  Auto-locates tesseract binary across PATH & OS paths
+│                                      │  Graceful 503 fallback if binary missing
+└──────────────────┬───────────────────┘
+                   ▼
+┌──────────────────────────────────────┐
+│ Text Normalization & Cleaning        │  Whitespace & control char normalization
+│                                      │  Minimum length threshold (≥ 15 chars)
+└──────────────────────────────────────┘
+                   │
+                   ▼
+   Extracted OCR Text + Language Detection + Inference
 ```
-
-**Tesseract Configuration:**
-
-| Setting                | Value                                           |
-| ---------------------- | ----------------------------------------------- |
-| Languages              | `eng+hin+spa+fra+ara`                            |
-| Page segmentation mode | 3 (fully automatic)                              |
-| OCR engine mode        | 3 (LSTM + legacy combined)                       |
-| DPI                    | 300 (upscale if below)                           |
 
 ---
 
 ## 9. Language Services
 
-### 9.1 Language Detection
+### 9.1 Deterministic Language Detection (ADR-017)
 
-| Property       | Value                              |
-| -------------- | ---------------------------------- |
-| Library        | `langdetect` (Google's CLD-based)  |
-| Fallback       | `lingua-py` (if langdetect unsure) |
-| Min text length | 20 characters                     |
-| Confidence threshold | 0.8 (below = "unknown")      |
+| Property       | Implementation                                    |
+| -------------- | ------------------------------------------------- |
+| **Engine**     | `langdetect` with enforced seed (`DetectorFactory.seed = 0`) |
+| **Fallback Policy** | **Strict Non-Fallback:** Returns `"unknown"` with confidence `None` when text is too short (<10 chars) or symbol-only. Never silently defaults to English. |
+| **Probability Reporting** | Reports actual detector confidence score directly from normalized posterior probabilities. |
 
-**Supported Languages:**
+### 9.2 Supported Language Registry (14 Languages)
 
-| Code | Language | Detection | Fake News Model | Sentiment Model | Translation | OCR  |
-| ---- | -------- | --------- | --------------- | --------------- | ----------- | ---- |
-| `en` | English  | ✅         | ✅ (native)      | ✅ (native)      | ✅           | ✅    |
-| `hi` | Hindi    | ✅         | ✅ (fine-tuned)   | ✅ (fine-tuned)  | ✅           | ✅    |
-| `es` | Spanish  | ✅         | ✅ (fine-tuned)   | ✅ (transfer)    | ✅           | ✅    |
-| `fr` | French   | ✅         | ✅ (transfer)     | ✅ (transfer)    | ✅           | ✅    |
-| `ar` | Arabic   | ✅         | ✅ (transfer)     | ✅ (transfer)    | ✅           | ✅    |
+VeritasAI maintains a comprehensive registry of 14 supported languages in `app.modules.translation.languages`:
+
+| Code | Name | Native Name | Analysis Supported | Verified Translation |
+| ---- | ---- | ----------- | ------------------ | -------------------- |
+| `en` | English | English | ✅ | ✅ |
+| `hi` | Hindi | हिन्दी | ✅ | ✅ |
+| `bn` | Bengali | বাংলা | ✅ | ✅ |
+| `ta` | Tamil | தமிழ் | ✅ | ✅ |
+| `te` | Telugu | తెలుగు | ✅ | ✅ |
+| `mr` | Marathi | मराठी | ✅ | ✅ |
+| `ur` | Urdu | اردو | ✅ | ✅ |
+| `gu` | Gujarati | ગુજરાતી | ✅ | ✅ |
+| `kn` | Kannada | ಕನ್ನಡ | ✅ | ✅ |
+| `ml` | Malayalam | മലയാളം | ✅ | ✅ |
+| `pa` | Punjabi | ਪੰਜਾਬੀ | ✅ | ✅ |
+| `es` | Spanish | Español | ✅ | ✅ |
+| `fr` | French | Français | ✅ | ✅ |
+| `de` | German | Deutsch | ✅ | ✅ |
+
+### 9.3 Presentation-Only Translation Architecture
+
+- **Inference Integrity:** Model inference and Gradient × Input explainability run strictly on the original submitted text (preserving trained multilingual representations).
+- **On-Demand Execution:** Translations are requested strictly for presentation display via `POST /api/v1/translate`.
+- **Provider:** `MyMemoryTranslationProvider` with URL chunking (≤450 chars), safe HTML entity decoding, in-memory LRU caching, and graceful 503 fallback.
+- **Educational Framing:** All translations include clear disclaimers that translation is for accessibility and does not modify core credibility/sentiment classification.
+
 
 *"native" = trained on language-specific data. "fine-tuned" = fine-tuned on smaller language-specific data. "transfer" = zero-shot cross-lingual transfer from XLM-R.*
 

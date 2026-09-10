@@ -5,11 +5,11 @@
 | Field              | Value                                                              |
 | ------------------ | ------------------------------------------------------------------ |
 | **Document ID**    | DOC-18                                                             |
-| **Version**        | 1.0.0                                                              |
-| **Status**         | Draft                                                              |
+| **Version**        | 1.1.0                                                              |
+| **Status**         | Active                                                             |
 | **Author**         | Vikas (Lead / Architect)                                           |
 | **Created**        | 2026-08-13                                                         |
-| **Last Updated**   | 2026-08-13                                                         |
+| **Last Updated**   | 2026-09-11                                                         |
 | **Start Date**     | 2026-08-13 (Week 1)                                               |
 | **Target End**     | 2026-12-02 (Week 16)                                              |
 
@@ -83,16 +83,16 @@ Legend: ███ = Active work   ░░ = Overlap / ramp-up   M = Milestone
 
 ## 3. Milestone Schedule
 
-| Milestone | Date (Target)    | Tag                    | Deliverable                                     |
-| --------- | ---------------- | ---------------------- | ----------------------------------------------- |
-| **M1**    | 2026-08-27 (W2)  | `v0.1.0-foundation`   | Project scaffold, Docker, CI/CD, all docs       |
-| **M2**    | 2026-09-10 (W4)  | `v0.2.0-ai-core`      | Trained models, analysis API endpoint            |
-| **M3**    | 2026-09-24 (W6)  | `v0.3.0-webapp`       | Auth, analysis page, history, caching            |
-| **M4**    | 2026-10-08 (W8)  | `v0.4.0-advanced-ai`  | XAI, OCR, URL, translation, summarization        |
-| **M5**    | 2026-10-22 (W10) | `v0.5.0-platform`     | Analytics, admin, export, rate limiting          |
-| **M6**    | 2026-11-05 (W12) | `v0.6.0-polish`       | ONNX optimization, responsive UI, Lighthouse ≥85|
-| **M7**    | 2026-11-19 (W14) | `v0.7.0-hardened`     | Full test suite, security scan, 0 critical       |
-| **M8**    | 2026-12-02 (W16) | `v1.0.0-release`      | Live deployment, demo video, final documentation |
+| Milestone | Date (Target)    | Tag                    | Deliverable                                     | Status      |
+| --------- | ---------------- | ---------------------- | ----------------------------------------------- | ----------- |
+| **M1**    | 2026-08-27 (W2)  | `v0.1.0-foundation`   | Project scaffold, Docker, CI/CD, all docs       | ✅ Complete |
+| **M2**    | 2026-09-10 (W4)  | `v0.2.0-ai-core`      | Trained models, analysis API endpoint            | ✅ Complete |
+| **M3**    | 2026-09-24 (W6)  | `v0.3.0-webapp`       | Auth, analysis page, history, caching            | ✅ Complete |
+| **M4**    | 2026-10-08 (W8)  | `v0.4.0-advanced-ai`  | XAI, OCR, URL, translation, summarization        | ✅ Complete |
+| **M5**    | 2026-10-22 (W10) | `v0.5.0-platform`     | Analytics, admin, export, rate limiting          | 🔄 In Progress (Dashboard Complete) |
+| **M6**    | 2026-11-05 (W12) | `v0.6.0-polish`       | ONNX optimization, responsive UI, Lighthouse ≥85| ⬜ Pending  |
+| **M7**    | 2026-11-19 (W14) | `v0.7.0-hardened`     | Full test suite, security scan, 0 critical       | ⬜ Pending  |
+| **M8**    | 2026-12-02 (W16) | `v1.0.0-release`      | Live deployment, demo video, final documentation | ⬜ Pending  |
 
 ---
 

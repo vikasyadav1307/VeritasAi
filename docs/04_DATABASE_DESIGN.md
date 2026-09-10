@@ -5,11 +5,11 @@
 | Field              | Value                                                              |
 | ------------------ | ------------------------------------------------------------------ |
 | **Document ID**    | DOC-04                                                             |
-| **Version**        | 1.0.0                                                              |
-| **Status**         | Draft                                                              |
+| **Version**        | 1.1.0                                                              |
+| **Status**         | Active                                                             |
 | **Author**         | Vikas (Lead / Architect)                                           |
 | **Created**        | 2026-08-13                                                         |
-| **Last Updated**   | 2026-08-13                                                         |
+| **Last Updated**   | 2026-09-11                                                         |
 | **Parent**         | `01_ARCHITECTURE.md`                                               |
 | **Database**       | PostgreSQL 16                                                      |
 | **ORM**            | SQLAlchemy 2.0 (async)                                             |
@@ -143,37 +143,33 @@ Stores every analysis performed by the system. Core data table.
 
 | Column              | Type                     | Nullable | Default            | Constraints         | Notes                                      |
 | ------------------- | ------------------------ | -------- | ------------------ | ------------------- | ------------------------------------------ |
-| `id`                | `UUID`                   | NO       | `gen_random_uuid()`| PK                  |                                            |
-| `user_id`           | `UUID`                   | NO       |                    | FK → `users.id`, INDEX |                                         |
-| `input_type`        | `input_type_enum`        | NO       |                    |                     | Values: `text`, `url`, `image`             |
-| `original_text`     | `TEXT`                   | NO       |                    |                     | Raw input as submitted                     |
-| `cleaned_text`      | `TEXT`                   | YES      | NULL               |                     | After preprocessing                        |
-| `detected_language` | `VARCHAR(10)`            | NO       |                    | INDEX               | ISO 639-1 code (e.g., `en`, `hi`, `es`)   |
-| `source_url`        | `VARCHAR(2048)`          | YES      | NULL               |                     | Only for URL input type                    |
-| `ocr_image_path`    | `VARCHAR(500)`           | YES      | NULL               |                     | Only for image input type                  |
-| `translated_text`   | `TEXT`                   | YES      | NULL               |                     | English translation (if input non-English) |
-| `summary`           | `TEXT`                   | YES      | NULL               |                     | Auto-generated summary                     |
-| `credibility_label` | `credibility_enum`       | NO       |                    | INDEX               | Values: `real`, `fake`, `uncertain`        |
-| `credibility_score` | `DECIMAL(5,4)`           | NO       |                    |                     | 0.0000–1.0000 (higher = more credible)     |
-| `sentiment_label`   | `sentiment_enum`         | NO       |                    | INDEX               | Values: `positive`, `negative`, `neutral`  |
-| `sentiment_score`   | `DECIMAL(5,4)`           | NO       |                    |                     | 0.0000–1.0000                              |
-| `confidence`        | `DECIMAL(5,4)`           | NO       |                    |                     | Model confidence 0.0000–1.0000             |
-| `explanation_data`  | `JSONB`                  | YES      | NULL               |                     | LIME/SHAP output; structure defined below  |
-| `model_versions`    | `JSONB`                  | NO       |                    |                     | `{"detection": "v1.0", "sentiment": "v1.0"}` |
-| `processing_time_ms`| `INTEGER`                | NO       |                    |                     | Total pipeline time in milliseconds        |
-| `input_hash`        | `VARCHAR(64)`            | NO       |                    | INDEX               | SHA-256 of cleaned_text; for caching       |
-| `is_cached`         | `BOOLEAN`                | NO       | `FALSE`            |                     | Whether result was served from cache       |
-| `created_at`        | `TIMESTAMPTZ`            | NO       | `NOW()`            | INDEX               |                                            |
-| `updated_at`        | `TIMESTAMPTZ`            | NO       | `NOW()`            |                     |                                            |
+| `id`                | `UUID`                   | NO       | `gen_random_uuid()`| PK                  | Primary Key                                |
+| `user_id`           | `UUID`                   | YES      | NULL               | FK → `users.id`, INDEX | Nullable for anonymous/public requests; ondelete SET NULL |
+| `input_type`        | `VARCHAR(20)`            | NO       | `'text'`           | INDEX               | Values: `text`, `url`, `image`             |
+| `original_text`     | `TEXT`                   | NO       |                    |                     | Raw submitted text or extracted content    |
+| `cleaned_text`      | `TEXT`                   | YES      | NULL               |                     | Cleaned / normalized text                  |
+| `source_url`        | `VARCHAR(2048)`          | YES      | NULL               |                     | Populated for URL input analyses           |
+| `title`             | `VARCHAR(500)`           | YES      | NULL               |                     | Article title or uploaded image filename   |
+| `detected_language` | `VARCHAR(10)`            | NO       | `'auto'`           | INDEX               | Detected ISO 639-1 code (e.g. `en`, `hi`)  |
+| `credibility_label` | `VARCHAR(20)`            | NO       |                    | INDEX               | Values: `real`, `fake`                     |
+| `credibility_score` | `FLOAT`                  | NO       |                    |                     | 0.0000–1.0000 (probability score)          |
+| `sentiment_label`   | `VARCHAR(20)`            | NO       |                    | INDEX               | Values: `positive`, `negative`, `neutral`  |
+| `sentiment_score`   | `FLOAT`                  | NO       |                    |                     | 0.0000–1.0000                              |
+| `confidence`        | `FLOAT`                  | NO       |                    |                     | Overall prediction confidence score        |
+| `processing_time_ms`| `FLOAT`                  | NO       |                    |                     | Total inference/pipeline duration in ms    |
+| `is_mock`           | `BOOLEAN`                | NO       | `FALSE`            |                     | Flag indicating mock fallback vs real model|
+| `created_at`        | `TIMESTAMPTZ`            | NO       | `NOW()`            | INDEX               | Record creation timestamp                  |
+| `updated_at`        | `TIMESTAMPTZ`            | NO       | `NOW()`            |                     | Record update timestamp                    |
+| `deleted_at`        | `TIMESTAMPTZ`            | YES      | NULL               | INDEX               | Soft-delete timestamp (excluded from UI)   |
 
 **Indexes:**
-- `ix_analysis_user_id` — on `user_id`
-- `ix_analysis_created_at` — on `created_at DESC` (for history pagination)
-- `ix_analysis_input_hash` — on `input_hash` (for cache lookups)
-- `ix_analysis_language` — on `detected_language`
-- `ix_analysis_credibility` — on `credibility_label`
-- `ix_analysis_sentiment` — on `sentiment_label`
-- `ix_analysis_user_created` — composite on `(user_id, created_at DESC)` (history query optimization)
+- `ix_analysis_results_user_id` — on `user_id`
+- `ix_analysis_results_input_type` — on `input_type`
+- `ix_analysis_results_detected_language` — on `detected_language`
+- `ix_analysis_results_credibility_label` — on `credibility_label`
+- `ix_analysis_results_sentiment_label` — on `sentiment_label`
+- `ix_analysis_results_created_at` — on `created_at DESC`
+
 
 ---
 
@@ -456,19 +452,22 @@ $$ LANGUAGE plpgsql;
 6. Commit migration file with the model change
 ```
 
-### 7.3 Migration Naming Convention
+### 7.3 Implemented Migrations (Active)
+
+| Revision ID | Description | Applied Date | Notes |
+| ----------- | ----------- | ------------ | ----- |
+| `8a9aac35e684` | `create_analysis_results_table` | 2026-09-08 | Initial `analysis_results` table with UUID, credibility, sentiment, timing, soft delete |
+| `671939c98ccd` | `create_users_table` | 2026-09-09 | `users` table + FK constraint `fk_analysis_results_user_id_users` |
+| `e1a47b892c01` | `add_source_url_and_title_to_analysis_results` | 2026-09-09 | Adds `source_url` (VARCHAR 2048) and `title` (VARCHAR 500) |
+
+### 7.4 Planned Migrations (Phase 4–5)
 
 ```
-001_create_users_table.py
-002_create_analysis_results_table.py
-003_create_refresh_tokens_table.py
-004_create_api_keys_table.py
-005_create_model_metadata_table.py
-006_create_feedback_table.py
-007_create_audit_logs_table.py
-008_add_analysis_ocr_fields.py       (Phase 3)
-009_add_analysis_translation_fields.py (Phase 3)
+004_create_feedback_table.py
+005_create_audit_logs_table.py
+006_create_api_keys_table.py
 ```
+
 
 ---
 

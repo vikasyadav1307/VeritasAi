@@ -5,11 +5,11 @@
 | Field              | Value                                                              |
 | ------------------ | ------------------------------------------------------------------ |
 | **Document ID**    | DOC-17                                                             |
-| **Version**        | 1.0.0                                                              |
-| **Status**         | Draft                                                              |
+| **Version**        | 1.1.0                                                              |
+| **Status**         | Active                                                             |
 | **Author**         | Vikas (Lead / Architect)                                           |
 | **Created**        | 2026-08-13                                                         |
-| **Last Updated**   | 2026-08-13                                                         |
+| **Last Updated**   | 2026-09-11                                                         |
 
 ---
 
@@ -21,9 +21,9 @@ veritasai/
 ├── frontend/                   # React + Vite frontend
 ├── models/                     # Trained AI model files (Git LFS / .gitignore)
 ├── notebooks/                  # Jupyter notebooks for training & evaluation
-├── e2e/                        # End-to-end Playwright tests
+├── e2e/                        # End-to-end Playwright tests (Phase 6)
 ├── docs/                       # Project documentation
-├── scripts/                    # Utility scripts (setup, seed, deploy)
+├── scripts/                    # Utility scripts (benchmark, setup, init)
 ├── docker/                     # Dockerfiles and compose configs
 ├── .github/                    # GitHub Actions workflows
 ├── .env.example                # Environment variable template
@@ -66,7 +66,9 @@ backend/
 │   │   │       ├── env.py
 │   │   │       ├── alembic.ini
 │   │   │       └── versions/
-│   │   │           └── 001_create_users.py
+│   │   │           ├── 8a9aac35e684_create_analysis_results_table.py
+│   │   │           ├── 671939c98ccd_create_users_table.py
+│   │   │           └── e1a47b892c01_add_auth_fields_to_analysis_results.py
 │   │   ├── cache/
 │   │   │   ├── __init__.py
 │   │   │   ├── redis_client.py        # Redis connection + helpers
@@ -78,106 +80,74 @@ backend/
 │   │       ├── __init__.py
 │   │       └── setup.py               # structlog configuration
 │   │
+│   ├── models/                         # SQLAlchemy declarative models
+│   │   ├── __init__.py
+│   │   ├── analysis.py                # AnalysisResult ORM model
+│   │   └── user.py                    # User ORM model
+│   │
 │   ├── modules/                        # Feature modules (bounded contexts)
 │   │   ├── __init__.py
 │   │   │
 │   │   ├── auth/                       # Authentication & Authorization
 │   │   │   ├── __init__.py
-│   │   │   ├── router.py              # Auth API endpoints
+│   │   │   ├── router.py              # Auth API endpoints (/register, /login, /refresh, /logout, /me)
 │   │   │   ├── service.py             # Auth business logic
-│   │   │   ├── repository.py          # User CRUD (SQLAlchemy)
 │   │   │   ├── schemas.py             # Request/response Pydantic models
-│   │   │   ├── models.py              # SQLAlchemy User, RefreshToken models
-│   │   │   ├── dependencies.py        # get_current_user, require_admin
-│   │   │   └── exceptions.py          # Auth-specific exceptions
+│   │   │   ├── security.py            # Password hashing & JWT token handling
+│   │   │   └── dependencies.py        # get_current_user, get_optional_user
 │   │   │
 │   │   ├── analysis/                   # Analysis orchestration
 │   │   │   ├── __init__.py
-│   │   │   ├── router.py              # /analyze/* endpoints
-│   │   │   ├── service.py             # AnalysisOrchestrator
-│   │   │   ├── schemas.py             # AnalysisRequest, AnalysisResponse
-│   │   │   └── exceptions.py
+│   │   │   ├── router.py              # POST /api/v1/analyze/text
+│   │   │   ├── services.py            # AnalysisService orchestration
+│   │   │   └── schemas.py             # TextAnalysisRequest, AnalysisResponse
 │   │   │
 │   │   ├── detection/                  # Fake news detection (AI)
 │   │   │   ├── __init__.py
-│   │   │   ├── service.py             # FakeNewsDetector
-│   │   │   ├── model_wrapper.py       # Model loading, tokenization, inference
-│   │   │   ├── schemas.py             # DetectionResult
-│   │   │   └── config.py              # Model-specific configuration
+│   │   │   └── model.py               # XLM-RoBERTa FakeNewsModel wrapper
 │   │   │
 │   │   ├── sentiment/                  # Sentiment analysis (AI)
 │   │   │   ├── __init__.py
-│   │   │   ├── service.py             # SentimentAnalyzer
-│   │   │   ├── model_wrapper.py       # Model loading, tokenization, inference
-│   │   │   ├── schemas.py             # SentimentResult
-│   │   │   └── config.py
+│   │   │   └── model.py               # XLM-RoBERTa SentimentModel wrapper
 │   │   │
-│   │   ├── explainability/             # XAI (LIME, SHAP, attention)
+│   │   ├── explainability/             # Gradient × Input token attribution (XAI)
 │   │   │   ├── __init__.py
-│   │   │   ├── service.py             # ExplainerService
-│   │   │   ├── lime_explainer.py      # LIME wrapper
-│   │   │   ├── attention_extractor.py # Attention weight extraction
-│   │   │   └── schemas.py             # ExplanationResult
+│   │   │   ├── router.py              # POST /api/v1/explain/text
+│   │   │   ├── services.py            # TokenAttributionEngine (Grad×Input)
+│   │   │   └── schemas.py             # ExplainRequest, ExplainResponse, AttributedToken
 │   │   │
-│   │   ├── language/                   # Language detection, translation, summarization
+│   │   ├── image_analysis/             # In-memory OCR & preprocessing
 │   │   │   ├── __init__.py
-│   │   │   ├── detector.py            # Language detection (langdetect)
-│   │   │   ├── translator.py          # Translation service (OPUS-MT)
-│   │   │   ├── summarizer.py          # Summarization service
-│   │   │   ├── router.py              # /translate, /summarize endpoints
-│   │   │   └── schemas.py
+│   │   │   ├── router.py              # POST /api/v1/analyze/image
+│   │   │   ├── security.py            # Bounded stream reader, magic bytes, Pillow bomb protection
+│   │   │   ├── services.py            # ImagePreprocessor, OcrEngine (dynamic Tesseract discovery)
+│   │   │   └── schemas.py             # ImageAnalysisResponse
 │   │   │
-│   │   ├── input_processing/           # Input ingestion (OCR, URL, text cleaning)
+│   │   ├── url_analysis/               # Safe URL scraping & analysis
 │   │   │   ├── __init__.py
-│   │   │   ├── text_cleaner.py        # Text normalization pipeline
-│   │   │   ├── url_scraper.py         # Article extraction from URLs
-│   │   │   ├── ocr_processor.py       # Tesseract OCR wrapper
-│   │   │   └── schemas.py
+│   │   │   ├── router.py              # POST /api/v1/analyze/url
+│   │   │   ├── services.py            # Multi-layer SSRF defense & content extraction
+│   │   │   └── schemas.py             # UrlAnalysisRequest, UrlAnalysisResponse
 │   │   │
-│   │   ├── history/                    # Analysis history
+│   │   ├── translation/                # Multilingual detection & presentation translation
 │   │   │   ├── __init__.py
-│   │   │   ├── router.py              # /history endpoints
-│   │   │   ├── service.py             # History CRUD
-│   │   │   ├── repository.py          # Analysis result queries
-│   │   │   ├── models.py              # AnalysisResult SQLAlchemy model
-│   │   │   └── schemas.py
+│   │   │   ├── detector.py            # Deterministic LanguageDetector (langdetect, seed=0)
+│   │   │   ├── languages.py           # 14-language ISO-639 registry
+│   │   │   ├── router.py              # GET /languages, POST /translate
+│   │   │   ├── services.py            # TranslationService, MyMemory provider, LRU caching
+│   │   │   └── schemas.py             # TranslateRequest, TranslateResponse, LanguagesResponse
 │   │   │
-│   │   ├── analytics/                  # Dashboard analytics
+│   │   ├── history/                    # Analysis history with IDOR prevention
 │   │   │   ├── __init__.py
-│   │   │   ├── router.py              # /analytics endpoints
-│   │   │   ├── service.py             # Aggregation logic
-│   │   │   └── schemas.py
+│   │   │   ├── router.py              # GET /history, GET /history/{id}, DELETE /history/{id}
+│   │   │   ├── service.py             # History CRUD logic
+│   │   │   └── schemas.py             # HistoryResponse, HistoryItem
 │   │   │
-│   │   ├── admin/                      # Admin panel
-│   │   │   ├── __init__.py
-│   │   │   ├── router.py              # /admin endpoints
-│   │   │   ├── service.py             # Admin operations
-│   │   │   └── schemas.py
-│   │   │
-│   │   ├── export/                     # PDF / JSON export
-│   │   │   ├── __init__.py
-│   │   │   ├── router.py              # /export endpoints
-│   │   │   ├── pdf_generator.py       # ReportLab PDF builder
-│   │   │   ├── json_exporter.py       # JSON file builder
-│   │   │   └── templates/             # Jinja2 templates for PDF
-│   │   │       └── report.html
-│   │   │
-│   │   ├── feedback/                   # User feedback
-│   │   │   ├── __init__.py
-│   │   │   ├── router.py
-│   │   │   ├── service.py
-│   │   │   ├── models.py
-│   │   │   └── schemas.py
-│   │   │
-│   │   └── model_registry/            # AI model management
+│   │   └── dashboard/                  # Analytics dashboard
 │   │       ├── __init__.py
-│   │       ├── registry.py            # ModelRegistry singleton
-│   │       ├── models.py              # ModelMetadata SQLAlchemy model
-│   │       └── schemas.py
-│   │
-│   └── middleware/                     # FastAPI middleware
-│       ├── __init__.py
-│       ├── error_handler.py           # Global exception → response mapper
+│   │       ├── router.py              # GET /dashboard/summary
+│   │       ├── service.py             # Server-side SQL aggregation queries
+│   │       └── schemas.py             # DashboardSummaryResponse, TrendPoint, DistributionItem
 │       ├── rate_limiter.py            # Token bucket rate limiting
 │       ├── request_id.py              # X-Request-ID injection
 │       └── security_headers.py        # HTTP security headers
@@ -215,67 +185,27 @@ frontend/
 │   │
 │   ├── features/                       # Feature-based modules
 │   │   ├── auth/
-│   │   │   ├── pages/
-│   │   │   │   ├── LoginPage.tsx
-│   │   │   │   ├── RegisterPage.tsx
-│   │   │   │   └── ForgotPasswordPage.tsx
-│   │   │   ├── components/
-│   │   │   │   ├── LoginForm.tsx
-│   │   │   │   └── RegisterForm.tsx
-│   │   │   └── hooks/
-│   │   │       └── useAuth.ts
+│   │   │   └── pages/
+│   │   │       ├── LoginPage.tsx
+│   │   │       └── RegisterPage.tsx
 │   │   │
 │   │   ├── analyze/
 │   │   │   ├── pages/
-│   │   │   │   └── AnalyzePage.tsx
-│   │   │   ├── components/
-│   │   │   │   ├── TextInputTab.tsx
-│   │   │   │   ├── UrlInputTab.tsx
-│   │   │   │   ├── ImageInputTab.tsx
-│   │   │   │   ├── ResultsDisplay.tsx
-│   │   │   │   ├── CredibilityCard.tsx
-│   │   │   │   ├── SentimentCard.tsx
-│   │   │   │   ├── XaiExplanation.tsx
-│   │   │   │   ├── AttentionHeatmap.tsx
-│   │   │   │   └── ConfidenceGauge.tsx
-│   │   │   └── hooks/
-│   │   │       └── useAnalysis.ts
+│   │   │   │   ├── AnalyzePage.tsx        # Tabbed analysis (Text, URL, Image)
+│   │   │   │   ├── AnalyzePage.test.tsx   # Vitest unit & interaction tests
+│   │   │   │   ├── Explainability.test.tsx
+│   │   │   │   └── Translation.test.tsx
+│   │   │   └── components/
+│   │   │       ├── ExplainabilityPanel.tsx # Interactive token attribution & sentiment
+│   │   │       └── TranslationPanel.tsx    # Presentation translation across 14 languages
 │   │   │
 │   │   ├── history/
-│   │   │   ├── pages/
-│   │   │   │   ├── HistoryPage.tsx
-│   │   │   │   └── AnalysisDetailPage.tsx
-│   │   │   ├── components/
-│   │   │   │   ├── HistoryTable.tsx
-│   │   │   │   └── HistoryFilters.tsx
-│   │   │   └── hooks/
-│   │   │       └── useHistory.ts
+│   │   │   └── pages/
+│   │   │       └── HistoryPage.tsx        # Interactive history table, modal, delete
 │   │   │
-│   │   ├── dashboard/
-│   │   │   ├── pages/
-│   │   │   │   └── DashboardPage.tsx
-│   │   │   ├── components/
-│   │   │   │   ├── StatCard.tsx
-│   │   │   │   ├── TrendChart.tsx
-│   │   │   │   ├── LanguagePieChart.tsx
-│   │   │   │   └── CredibilityBarChart.tsx
-│   │   │   └── hooks/
-│   │   │       └── useAnalytics.ts
-│   │   │
-│   │   ├── admin/
-│   │   │   ├── pages/
-│   │   │   │   └── AdminPage.tsx
-│   │   │   ├── components/
-│   │   │   │   ├── UserTable.tsx
-│   │   │   │   └── SystemStats.tsx
-│   │   │   └── hooks/
-│   │   │       └── useAdmin.ts
-│   │   │
-│   │   └── profile/
-│   │       ├── pages/
-│   │       │   └── ProfilePage.tsx
-│   │       └── components/
-│   │           └── ProfileForm.tsx
+│   │   └── dashboard/
+│   │       └── pages/
+│   │           └── DashboardPage.tsx      # Analytics dashboard with Recharts
 │   │
 │   ├── components/                     # Shared UI components
 │   │   ├── ui/

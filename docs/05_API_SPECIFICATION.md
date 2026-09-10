@@ -5,11 +5,11 @@
 | Field              | Value                                                              |
 | ------------------ | ------------------------------------------------------------------ |
 | **Document ID**    | DOC-05                                                             |
-| **Version**        | 1.0.0                                                              |
-| **Status**         | Draft                                                              |
+| **Version**        | 1.1.0                                                              |
+| **Status**         | Active                                                             |
 | **Author**         | Vikas (Lead / Architect)                                           |
 | **Created**        | 2026-08-13                                                         |
-| **Last Updated**   | 2026-08-13                                                         |
+| **Last Updated**   | 2026-09-11                                                         |
 | **Parent**         | `01_ARCHITECTURE.md`, `04_DATABASE_DESIGN.md`                      |
 | **Base URL**       | `http://localhost:8000/api/v1` (dev) / `https://api.veritasai.dev/api/v1` (prod) |
 | **Format**         | JSON (application/json) unless otherwise noted                     |
@@ -113,50 +113,46 @@
 │   ├── POST   /login              Obtain JWT tokens
 │   ├── POST   /refresh            Refresh access token
 │   ├── POST   /logout             Revoke refresh token
-│   ├── GET    /me                 Get current user profile
-│   ├── PUT    /me                 Update profile
-│   └── PUT    /password           Change password
+│   └── GET    /me                 Get current user profile
 │
 ├── analyze/
-│   ├── POST   /text               Analyze plain text
-│   ├── POST   /url                Analyze article from URL
-│   └── POST   /image              Analyze text in image (OCR)
+│   ├── POST   /text               Analyze plain text (credibility + sentiment + language)
+│   ├── POST   /url                Analyze article from URL (multi-layer SSRF defenses)
+│   └── POST   /image              Analyze text in image via in-memory OCR (JPEG/PNG/WEBP)
+│
+├── explain/
+│   └── POST   /text               On-demand Gradient × Input token attribution
 │
 ├── history/
-│   ├── GET    /                   List analysis history
-│   ├── GET    /{id}               Get single analysis detail
-│   └── DELETE /{id}               Delete analysis record
+│   ├── GET    /                   List analysis history (paginated, user-scoped)
+│   ├── GET    /{id}               Get single analysis detail (ownership check)
+│   └── DELETE /{id}               Delete analysis record (soft delete)
+│
+├── dashboard/
+│   └── GET    /summary            Server-side analytics aggregation & distributions
+│
+├── languages/
+│   └── GET    /                   List supported languages (14 languages)
 │
 ├── translate/
-│   └── POST   /                   Translate text
+│   └── POST   /                   On-demand presentation translation (MyMemory)
 │
-├── summarize/
+├── summarize/                     (Phase 4 planned)
 │   └── POST   /                   Summarize text
 │
-├── export/
+├── export/                        (Phase 4 planned)
 │   ├── GET    /{analysis_id}/pdf  Export as PDF
 │   └── GET    /{analysis_id}/json Export as JSON
 │
-├── analytics/
-│   ├── GET    /summary            Aggregate statistics
-│   ├── GET    /trends             Time-series trends
-│   └── GET    /languages          Analysis by language
-│
-├── admin/
+├── admin/                         (Phase 4 planned)
 │   ├── GET    /users              List all users
 │   ├── GET    /users/{id}         Get user details
-│   ├── PUT    /users/{id}/status  Activate/deactivate user
 │   └── GET    /stats              System statistics
 │
-├── feedback/
-│   └── POST   /{analysis_id}     Submit feedback on analysis
-│
-├── languages/
-│   └── GET    /                   List supported languages
-│
-└── models/
-    └── GET    /                   List loaded models
+└── feedback/                      (Phase 4 planned)
+    └── POST   /{analysis_id}     Submit feedback on analysis
 ```
+
 
 ---
 
@@ -562,46 +558,115 @@ Submit a URL for article extraction and analysis.
 
 ### 5.10 Analysis — `POST /api/v1/analyze/image`
 
-Submit an image for OCR text extraction and analysis.
+Submit an image file for in-memory OCR text extraction and credibility/sentiment analysis.
 
 | Property       | Value                           |
 | -------------- | ------------------------------- |
 | **Auth**       | Bearer JWT                      |
-| **Rate Limit** | 15 requests / hour / user       |
 | **Content-Type** | `multipart/form-data`         |
-| **Phase**      | Phase 3                         |
+| **Phase**      | Phase 3 (Active)                |
 
-**Request:** Multipart form data
+**Request:** Multipart form data (`file`)
 
 | Field     | Type   | Required | Validation                                         |
 | --------- | ------ | -------- | -------------------------------------------------- |
-| `image`   | file   | Yes      | JPEG, PNG, or WebP; max 10 MB                      |
-| `options` | string | No       | JSON string with same options as text analysis     |
+| `file`    | file   | Yes      | JPEG, PNG, or WebP; max 10 MB bounded stream; magic bytes checked |
 
-**Success Response:** `200 OK` — same structure as text analysis, with additional fields:
+**Success Response:** `200 OK`
 
 ```json
 {
-  "data": {
-    "ocr_extracted_text": "The text extracted from the image...",
-    "ocr_confidence": 0.94,
-    ...
-  }
+  "filename": "news_screenshot.png",
+  "content_type": "image/png",
+  "ocr_text": "Scientists announce major discovery in clean energy...",
+  "detected_language": "en",
+  "character_count": 520,
+  "credibility": {
+    "label": "real",
+    "confidence": 0.9842,
+    "is_mock": false
+  },
+  "sentiment": {
+    "label": "positive",
+    "confidence": 0.9715,
+    "is_mock": false
+  },
+  "processing_time_ms": 1140.5
 }
 ```
 
 **Error Responses:**
 
-| Status | Code                              | When                              |
-| ------ | --------------------------------- | --------------------------------- |
-| 400    | `VALIDATION_INVALID_IMAGE_FORMAT` | Unsupported file type             |
-| 400    | `VALIDATION_FILE_TOO_LARGE`      | File exceeds 10 MB                |
-| 422    | `PROCESSING_OCR_FAILED`          | OCR could not extract text        |
-| 422    | `PROCESSING_OCR_TEXT_TOO_SHORT`  | Extracted text under 20 chars     |
+| Status | Detail | When |
+| ------ | ------ | ---- |
+| 400 | Invalid image format / Magic bytes rejected | File is not JPEG, PNG, or WEBP, or payload is empty |
+| 400 | Image exceeds size limit of 10 MB | Payload over 10 MB |
+| 422 | Image contains insufficient text for analysis | Cleaned OCR text under 15 characters |
+| 503 | Image text extraction is temporarily unavailable | Tesseract engine not discovered on host |
+
+---
+
+### 5.10b Explainability — `POST /api/v1/explain/text`
+
+Request token-level Gradient × Input feature attribution ($A_i = \sum_d \nabla_{E_i} L_{c^*} \odot E_{i,d}$) on the embedding layer targeting predicted class logits.
+
+| Property       | Value                           |
+| -------------- | ------------------------------- |
+| **Auth**       | Bearer JWT                      |
+| **Phase**      | Phase 3 (Active)                |
+
+**Request Body:**
+
+```json
+{
+  "text": "Scientists at MIT announced a major breakthrough in nuclear fusion energy today."
+}
+```
+
+| Field   | Type   | Required | Validation                                         |
+| ------- | ------ | -------- | -------------------------------------------------- |
+| `text`  | string | Yes      | Min 10 chars, max 50,000 chars                     |
+
+**Success Response:** `200 OK`
+
+```json
+{
+  "credibility": {
+    "model": "FakeNewsDetector (XLM-RoBERTa)",
+    "predicted_label": "real",
+    "confidence": 0.9842,
+    "method": "Gradient x Input (Predicted Class Logit)",
+    "tokens": [
+      {
+        "token": "Scientists",
+        "importance": 0.4521,
+        "direction": "supporting",
+        "raw_score": 0.04521,
+        "score": 0.04521,
+        "normalized_score": 0.78
+      }
+    ],
+    "latency_ms": 265.4,
+    "explanation_note": "Positive scores indicate words driving prediction toward 'real'."
+  },
+  "sentiment": {
+    "model": "SentimentAnalyzer (XLM-RoBERTa)",
+    "predicted_label": "positive",
+    "confidence": 0.9715,
+    "method": "Gradient x Input (Predicted Class Logit)",
+    "tokens": [ ... ],
+    "latency_ms": 258.1,
+    "explanation_note": "Positive scores indicate words driving prediction toward 'positive'."
+  },
+  "total_latency_ms": 523.5,
+  "disclaimer": "Feature attribution highlights tokens that mathematically influenced model sensitivity..."
+}
+```
 
 ---
 
 ### 5.11 History — `GET /api/v1/history`
+
 
 List the current user's analysis history.
 
@@ -663,46 +728,55 @@ Delete an analysis record (soft delete).
 
 ### 5.14 Translation — `POST /api/v1/translate`
 
-Translate text between supported languages.
+On-demand presentation translation of analyzed text (ADR-017). Model inference and token explainability remain strictly bound to the original source text.
 
 | Property       | Value                           |
 | -------------- | ------------------------------- |
-| **Auth**       | Bearer JWT                      |
-| **Rate Limit** | 30 requests / hour / user       |
-| **Phase**      | Phase 3                         |
+| **Auth**       | Public / Optional               |
+| **Phase**      | Milestone 3.7 (Active)          |
 
 **Request Body:**
 
 ```json
 {
-  "text": "यह एक परीक्षण है।",
-  "source_language": "hi",
-  "target_language": "en"
+  "text": "वैज्ञानिकों ने आज स्वच्छ ऊर्जा के क्षेत्र में सफलता की घोषणा की।",
+  "target_lang": "en",
+  "source_lang": "hi"
 }
 ```
 
-| Field              | Type   | Required | Validation                      |
-| ------------------ | ------ | -------- | ------------------------------- |
-| `text`             | string | Yes      | 1–10,000 chars                  |
-| `source_language`  | string | No       | ISO 639-1; auto-detect if omitted |
-| `target_language`  | string | Yes      | ISO 639-1                        |
+| Field         | Type   | Required | Validation                                    |
+| ------------- | ------ | -------- | --------------------------------------------- |
+| `text`        | string | Yes      | 1–5,000 chars                                 |
+| `target_lang` | string | Yes      | ISO 639-1 supported target code (e.g. `"en"`) |
+| `source_lang` | string | No       | ISO 639-1 code or omitted for auto-detection   |
 
 **Success Response:** `200 OK`
 
 ```json
 {
-  "success": true,
-  "data": {
-    "original_text": "यह एक परीक्षण है।",
-    "translated_text": "This is a test.",
-    "source_language": "hi",
-    "target_language": "en",
-    "confidence": 0.95
-  }
+  "translated_text": "Scientists announced a major breakthrough in clean energy today.",
+  "source_lang": "hi",
+  "source_lang_name": "Hindi",
+  "target_lang": "en",
+  "target_lang_name": "English",
+  "character_count": 64,
+  "provider": "mymemory",
+  "is_cached": false,
+  "disclaimer": "Machine translation is provided for presentation and accessibility only. Core credibility and sentiment evaluations remain strictly evaluated against the original text."
 }
 ```
 
+**Error Responses:**
+
+| Status | Detail | When |
+| ------ | ------ | ---- |
+| 400 | Target language '{code}' is not supported | Target not in supported registry |
+| 422 | Text cannot be empty | Empty or whitespace-only text |
+| 503 | Translation service is temporarily unavailable | External translation provider unreachable |
+
 ---
+
 
 ### 5.15 Summarization — `POST /api/v1/summarize`
 
@@ -781,49 +855,54 @@ Download analysis result as a JSON file.
 
 ---
 
-### 5.18 Analytics — `GET /api/v1/analytics/summary`
+### 5.18 Dashboard Analytics — `GET /api/v1/dashboard/summary`
 
-Get aggregate statistics for the current user's analyses.
+Get real-time SQL-aggregated analytics and distributions for the authenticated user's active analyses (ADR-011).
 
 | Property       | Value                           |
 | -------------- | ------------------------------- |
 | **Auth**       | Bearer JWT                      |
-| **Phase**      | Phase 4                         |
+| **Phase**      | Milestone 3.2 (Active)          |
 
 **Success Response:** `200 OK`
 
 ```json
 {
-  "success": true,
-  "data": {
-    "total_analyses": 142,
-    "credibility_breakdown": {
-      "real": 68,
-      "fake": 52,
-      "uncertain": 22
-    },
-    "sentiment_breakdown": {
-      "positive": 45,
-      "negative": 72,
-      "neutral": 25
-    },
-    "language_breakdown": {
-      "en": 80,
-      "hi": 35,
-      "es": 15,
-      "fr": 8,
-      "ar": 4
-    },
-    "input_type_breakdown": {
-      "text": 100,
-      "url": 30,
-      "image": 12
-    },
-    "avg_credibility_score": 0.5423,
-    "avg_processing_time_ms": 1650
-  }
+  "total_analyses": 142,
+  "real_count": 82,
+  "fake_count": 60,
+  "real_percentage": 57.7,
+  "fake_percentage": 42.3,
+  "positive_count": 45,
+  "negative_count": 72,
+  "neutral_count": 25,
+  "positive_percentage": 31.7,
+  "negative_percentage": 50.7,
+  "neutral_percentage": 17.6,
+  "average_confidence": 92.4,
+  "average_processing_time_ms": 1250.0,
+  "credibility_distribution": {
+    "real_count": 82,
+    "fake_count": 60,
+    "real_percentage": 57.7,
+    "fake_percentage": 42.3
+  },
+  "sentiment_distribution": {
+    "positive_count": 45,
+    "negative_count": 72,
+    "neutral_count": 25,
+    "positive_percentage": 31.7,
+    "negative_percentage": 50.7,
+    "neutral_percentage": 17.6
+  },
+  "languages": [
+    { "language": "en", "count": 80, "percentage": 56.3 },
+    { "language": "hi", "count": 35, "percentage": 24.6 }
+  ],
+  "recent_analyses": [ ... ]
 }
 ```
+
 
 ---
 
@@ -994,31 +1073,47 @@ Submit user feedback on an analysis result.
 
 ### 5.25 Languages — `GET /api/v1/languages`
 
-List all supported languages.
+List all 14 supported languages in the VeritasAI language registry.
 
 | Property       | Value                           |
 | -------------- | ------------------------------- |
 | **Auth**       | None (public)                   |
-| **Phase**      | Phase 1                         |
+| **Phase**      | Milestone 3.7 (Active)          |
 
 **Success Response:** `200 OK`
 
 ```json
 {
-  "success": true,
-  "data": {
-    "languages": [
-      {"code": "en", "name": "English", "detection": true, "sentiment": true, "translation": true},
-      {"code": "hi", "name": "Hindi", "detection": true, "sentiment": true, "translation": true},
-      {"code": "es", "name": "Spanish", "detection": true, "sentiment": true, "translation": true},
-      {"code": "fr", "name": "French", "detection": true, "sentiment": true, "translation": true},
-      {"code": "ar", "name": "Arabic", "detection": true, "sentiment": true, "translation": true}
-    ]
-  }
+  "languages": [
+    {
+      "code": "en",
+      "name": "English",
+      "native_name": "English",
+      "is_supported_for_analysis": true,
+      "is_verified_translation": true
+    },
+    {
+      "code": "hi",
+      "name": "Hindi",
+      "native_name": "हिन्दी",
+      "is_supported_for_analysis": true,
+      "is_verified_translation": true
+    },
+    {
+      "code": "bn",
+      "name": "Bengali",
+      "native_name": "বাংলা",
+      "is_supported_for_analysis": true,
+      "is_verified_translation": true
+    }
+  ],
+  "total_supported": 14,
+  "default_target": "en"
 }
 ```
 
 ---
+
 
 ### 5.26 Models — `GET /api/v1/models`
 

@@ -27,7 +27,11 @@ export interface AnalyzeResponse {
   credibility: CredibilityResult;
   sentiment: SentimentResult;
   processing_time_ms: number;
+  detected_language?: string;
+  language_name?: string | null;
+  language_confidence?: number | null;
 }
+
 
 export interface AnalyzeUrlRequest {
   url: string;
@@ -37,9 +41,77 @@ export interface AnalyzeUrlResponse extends AnalyzeResponse {
   source_url: string;
   final_url?: string;
   extracted_title?: string;
+  extracted_text?: string;
   detected_language: string;
   character_count: number;
 }
+
+export interface AnalyzeImageResponse extends AnalyzeResponse {
+  filename: string;
+  content_type: string;
+  ocr_text: string;
+  detected_language: string;
+  character_count: number;
+}
+
+// ── Explainability API Types ──
+
+export interface AttributedToken {
+  token: string;
+  score: number;
+  direction: 'supporting' | 'opposing';
+  normalized_score: number;
+}
+
+export interface ModelExplanation {
+  predicted_label: string;
+  confidence: number;
+  method: string;
+  tokens: AttributedToken[];
+  latency_ms: number;
+}
+
+export interface ExplainResponse {
+  credibility_explanation: ModelExplanation;
+  sentiment_explanation: ModelExplanation;
+  total_latency_ms: number;
+  disclaimer: string;
+}
+
+// ── Translation API Types ──
+
+export interface SupportedLanguage {
+  code: string;
+  name: string;
+  native_name: string;
+  is_supported_for_analysis: boolean;
+  is_verified_translation: boolean;
+}
+
+export interface LanguagesResponse {
+  languages: SupportedLanguage[];
+  total_supported: number;
+  default_target: string;
+}
+
+export interface TranslateRequest {
+  text: string;
+  target_lang: string;
+  source_lang?: string;
+}
+
+export interface TranslateResponse {
+  translated_text: string;
+  source_lang: string;
+  source_lang_name: string;
+  target_lang: string;
+  target_lang_name: string;
+  character_count: number;
+  provider: string;
+  is_cached: boolean;
+  disclaimer: string;
+}
+
 
 // ── History API Types ──
 
@@ -307,6 +379,55 @@ export async function analyzeUrl(url: string): Promise<AnalyzeUrlResponse> {
     url,
   } satisfies AnalyzeUrlRequest);
 
+  return response.data;
+}
+
+/**
+ * Send an image file to the backend for OCR text extraction and analysis.
+ *
+ * @param file - Image file (JPEG, PNG, or WEBP, max 10MB).
+ */
+export async function analyzeImage(file: File): Promise<AnalyzeImageResponse> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await api.post<AnalyzeImageResponse>('/api/v1/analyze/image', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+
+  return response.data;
+}
+
+// ── Explainability API ──
+
+/**
+ * Request token-level gradient attribution explanation for analyzed text.
+ *
+ * @param text - The actual analyzed text (submitted text, extracted article text, or OCR cleaned text).
+ */
+export async function explainText(text: string): Promise<ExplainResponse> {
+  const response = await api.post<ExplainResponse>('/api/v1/explain/text', { text });
+  return response.data;
+}
+
+// ── Translation API ──
+
+/**
+ * Fetch the registry of supported languages for analysis and translation.
+ */
+export async function getSupportedLanguages(): Promise<LanguagesResponse> {
+  const response = await api.get<LanguagesResponse>('/api/v1/languages');
+  return response.data;
+}
+
+/**
+ * Translate analyzed text to a target language on demand for presentation.
+ * Note: Model inference and token explainability remain strictly bound to the original text.
+ */
+export async function translateText(data: TranslateRequest): Promise<TranslateResponse> {
+  const response = await api.post<TranslateResponse>('/api/v1/translate', data);
   return response.data;
 }
 

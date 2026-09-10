@@ -19,6 +19,8 @@ from app.models.analysis import AnalysisResult
 from app.models.user import User
 from app.modules.analysis.services import AnalysisService
 from app.modules.auth.dependencies import get_optional_user
+from app.modules.translation.detector import LanguageDetector
+from app.modules.translation.languages import get_language_name
 
 logger = structlog.get_logger(__name__)
 
@@ -116,6 +118,24 @@ class AnalyzeResponse(BaseModel):
 
     sentiment: SentimentResult
 
+    detected_language: str = Field(
+        default="unknown",
+        description="Detected ISO 639-1 language code of the text.",
+        examples=["en", "hi", "unknown"],
+    )
+
+    language_name: str = Field(
+        default="Unknown / Undetermined",
+        description="Human-readable language name.",
+        examples=["English", "Hindi", "Unknown / Undetermined"],
+    )
+
+    language_confidence: float | None = Field(
+        default=None,
+        description="Detector probability (0.0–1.0) or None if undetermined.",
+        examples=[0.9999],
+    )
+
     processing_time_ms: float = Field(
         ...,
         description="Total processing time in milliseconds.",
@@ -166,10 +186,23 @@ async def analyze_text(
 
     start_time = time.perf_counter()
 
+    # ── Language Detection (Executed on original text; never replaces inference input) ──
+    if request.language.lower() == "auto":
+        detected = LanguageDetector.detect_language(request.text)
+        detected_lang_code = detected.code
+        detected_lang_name = detected.name
+        detected_lang_conf = detected.confidence
+    else:
+        detected_lang_code = request.language.lower()
+        detected_lang_name = get_language_name(detected_lang_code)
+        detected_lang_conf = 1.0
+
     logger.info(
         "analysis_request_received",
         text_length=len(request.text),
         language=request.language,
+        detected_language=detected_lang_code,
+        language_confidence=detected_lang_conf,
     )
 
     try:
@@ -206,7 +239,7 @@ async def analyze_text(
             user_id=current_user.id if current_user else None,
             input_type="text",
             original_text=request.text,
-            detected_language=request.language if request.language != "auto" else "en",
+            detected_language=detected_lang_code,
             credibility_label=results["credibility"]["label"],
             credibility_score=results["credibility"]["confidence"],
             sentiment_label=results["sentiment"]["label"],
@@ -252,5 +285,8 @@ async def analyze_text(
             confidence=results["sentiment"]["confidence"],
             is_mock=results["sentiment"]["is_mock"],
         ),
+        detected_language=detected_lang_code,
+        language_name=detected_lang_name,
+        language_confidence=detected_lang_conf,
         processing_time_ms=elapsed_ms,
     )

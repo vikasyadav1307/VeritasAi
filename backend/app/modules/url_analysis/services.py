@@ -13,6 +13,7 @@ import structlog
 from bs4 import BeautifulSoup
 from langdetect import DetectorFactory, detect
 
+from app.modules.translation.detector import LanguageDetector
 from app.modules.analysis.services import AnalysisService
 from app.modules.url_analysis.security import (
     SSRFSecurityError,
@@ -389,13 +390,10 @@ class ArticleExtractorService:
         return None
 
     def _detect_language(self, text: str, soup: BeautifulSoup) -> str:
-        """Detect language using langdetect, falling back to html lang attribute or 'en'."""
-        try:
-            detected = detect(text)
-            if detected:
-                return str(detected)
-        except Exception:
-            pass
+        """Detect language using LanguageDetector, falling back to html lang attribute or 'unknown'."""
+        detected = LanguageDetector.detect_language(text)
+        if detected.is_reliable and detected.code != "unknown":
+            return detected.code
 
         # Check <html lang="...">
         html_tag = soup.find("html")
@@ -404,7 +402,7 @@ class ArticleExtractorService:
             if len(lang_attr) in (2, 3):
                 return lang_attr
 
-        return "en"
+        return "unknown"
 
 
 class UrlAnalysisService:

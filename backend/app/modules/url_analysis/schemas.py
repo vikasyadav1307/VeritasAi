@@ -42,6 +42,10 @@ class AnalyzeUrlResponse(BaseModel):
         description="The extracted title of the article, if available.",
         examples=["Scientists Discover Renewable Breakthrough"],
     )
+    extracted_text: str | None = Field(
+        default=None,
+        description="The cleaned extracted article text passed to the NLP models.",
+    )
     detected_language: str = Field(
         default="en",
         description="Detected ISO 639-1 language code of the extracted article.",

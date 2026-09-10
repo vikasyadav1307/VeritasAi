@@ -18,7 +18,7 @@
 | Property           | Value                                      |
 | ------------------ | ------------------------------------------ |
 | **Current Phase**  | Phase 3 — Core Platform Features           |
-| **Current Sprint** | Milestone 3.4 — URL Analysis               |
+| **Current Sprint** | Milestone 3.7 — Multilingual Presentation  |
 | **Sprint Start**   | 2026-09-09                                 |
 | **Sprint End**     | Implemented & Verified (Uncommitted)       |
 | **Git Branch**     | `master`                                   |
@@ -405,6 +405,31 @@ Build a functional, interactive Dashboard powered by real analysis data stored i
 | 2026-09-09 | `backend/app/modules/auth/dependencies.py`| 3 | get_current_user & get_optional_user dependencies |
 | 2026-09-09 | `backend/tests/integration/test_auth.py`  | 3 | 14 integration tests for auth & IDOR prevention |
 | 2026-09-09 | `frontend/src/store/auth.store.ts`        | 3 | Zustand authentication state store |
+| 2026-09-09 | `backend/app/modules/image_analysis/__init__.py` | 3 | Image analysis module init |
+| 2026-09-09 | `backend/app/modules/image_analysis/router.py` | 3 | Image analysis REST router (POST /api/v1/analyze/image) |
+| 2026-09-09 | `backend/app/modules/image_analysis/schemas.py` | 3 | Image analysis Pydantic schemas |
+| 2026-09-09 | `backend/app/modules/image_analysis/security.py` | 3 | Bounded stream reader, magic bytes, dimension & pixel limits |
+| 2026-09-09 | `backend/app/modules/image_analysis/services.py` | 3 | ImagePreprocessor, OcrEngine, TextCleaner, ImageAnalysisService |
+| 2026-09-09 | `backend/tests/integration/test_image_analysis.py` | 3 | 24 integration tests for OCR & image analysis |
+| 2026-09-09 | `backend/app/modules/explainability/__init__.py` | 3 | Explainability module init |
+| 2026-09-09 | `backend/app/modules/explainability/schemas.py` | 3 | AttributedToken, ModelExplanation, ExplainRequest, ExplainResponse |
+| 2026-09-09 | `backend/app/modules/explainability/services.py` | 3 | TokenAttributionEngine (Grad×Input), ExplainabilityService |
+| 2026-09-09 | `backend/app/modules/explainability/router.py` | 3 | POST /api/v1/explain/text router with authentication |
+| 2026-09-09 | `backend/tests/integration/test_explainability.py` | 3 | 9 integration tests for token attribution & sign interpretation |
+| 2026-09-09 | `frontend/src/features/analyze/components/ExplainabilityPanel.tsx` | 3 | Interactive token attribution visualization component |
+| 2026-09-09 | `frontend/src/features/analyze/pages/Explainability.test.tsx` | 3 | Vitest suite for ExplainabilityPanel (5 tests) |
+| 2026-09-09 | `backend/app/modules/translation/__init__.py` | 3 | Translation module init |
+| 2026-09-09 | `backend/app/modules/translation/detector.py` | 3 | Deterministic LanguageDetector with langdetect |
+| 2026-09-09 | `backend/app/modules/translation/languages.py`| 3 | 14-language registry & code normalization |
+| 2026-09-09 | `backend/app/modules/translation/schemas.py`  | 3 | Translation Pydantic schemas |
+| 2026-09-09 | `backend/app/modules/translation/services.py` | 3 | TranslationService & MyMemory provider |
+| 2026-09-09 | `backend/app/modules/translation/router.py`   | 3 | GET /languages and POST /translate endpoints |
+| 2026-09-09 | `backend/tests/integration/test_translation.py` | 3 | 16 integration tests for language detection & translation |
+| 2026-09-09 | `frontend/src/features/analyze/components/TranslationPanel.tsx` | 3 | Collapsible multilingual translation component |
+| 2026-09-09 | `frontend/src/features/analyze/pages/Translation.test.tsx` | 3 | Vitest suite for TranslationPanel (5 tests) |
+| 2026-09-09 | `scripts/benchmark_explainability.py`     | 3 | Explainability latency benchmark script |
+| 2026-09-09 | `scripts/benchmark_multilingual.py`       | 3 | Multilingual 14-language verification script |
+| 2026-09-09 | `scripts/init_local_db.py`                | 3 | Local dev DB initialization helper |
 
 ### Files Modified
 
@@ -440,6 +465,15 @@ Build a functional, interactive Dashboard powered by real analysis data stored i
 | 2026-09-09 | `frontend/src/features/auth/pages/LoginPage.tsx` | Form validation & login flow | Zod + React Hook Form    |
 | 2026-09-09 | `frontend/src/features/auth/pages/RegisterPage.tsx` | Form validation & register flow | Zod + React Hook Form |
 | 2026-09-09 | `docs/10_TECHNICAL_DECISIONS.md`          | Added ADR-013                       | JWT + IDOR architecture  |
+| 2026-09-09 | `backend/app/main.py`                     | Mounted image, explainability, translation routers | Mount /analyze/image, /explain/text, /translate |
+| 2026-09-09 | `backend/app/modules/analysis/router.py`  | Added language detection to response | Surface detected language |
+| 2026-09-09 | `backend/app/modules/url_analysis/schemas.py` | Added extracted_text field        | Surface text for explainability |
+| 2026-09-09 | `backend/app/modules/url_analysis/router.py`  | Return extracted_text in response | Pass extracted text to frontend |
+| 2026-09-09 | `frontend/src/services/api.ts`            | Added explainText, translateText & types | Explainability & translation API |
+| 2026-09-09 | `frontend/src/features/analyze/pages/AnalyzePage.tsx` | Integrated Explainability & Translation | Text, URL, Image explain & translate |
+| 2026-09-09 | `frontend/src/features/history/pages/HistoryPage.tsx` | Integrated Explainability & Translation | History modal explain & translate |
+| 2026-09-09 | `docs/10_TECHNICAL_DECISIONS.md`          | Added ADR-015, ADR-016, ADR-017     | OCR, Explainability & Translation architecture |
+
 
 ---
 

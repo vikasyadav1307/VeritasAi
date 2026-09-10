@@ -234,7 +234,46 @@
 | **Impact**             | Secure `POST /api/v1/analyze/url` endpoint requiring authentication; zero internal network exposure; user-scoped history persistence with `source_url` and `title`; full backwards compatibility with text analysis. |
 | **Future Considerations** | If headless rendering of client-rendered Single Page Application news sites is needed in Phase 4/5, evaluate isolated sandboxed headless browser instances (e.g. Playwright) in an egress-restricted container. |
 
+### ADR-015: In-Memory Image Preprocessing, Security Defenses, and Multi-Engine OCR Ingestion
+
+| Field                  | Detail                                                              |
+| ---------------------- | ------------------------------------------------------------------- |
+| **Date**               | 2026-09-09                                                          |
+| **Status**             | Accepted                                                            |
+| **Problem**            | How should VeritasAI ingest uploaded images for OCR text extraction and credibility/sentiment analysis without introducing security vulnerabilities (decompression bombs, temp file leakage, path traversal), memory starvation, or ungraceful crashes in environments lacking Tesseract binaries? |
+| **Options Considered** | 1. Write uploaded files to disk `/tmp` and invoke external shell commands via `subprocess`. 2. Pure Python in-memory buffers with Pillow validation, dynamic binary discovery, and graceful fallback. 3. External cloud OCR APIs (e.g., Google Cloud Vision, AWS Rekognition). |
+| **Chosen Solution**    | Option 2: Strict bounded stream reading (max 10 MB in 64 KB chunks), magic bytes verification against prohibited (PDF, SVG, HTML, binaries, archives) and supported formats (JPEG, PNG, WEBP), Pillow `verify()` check with `Image.MAX_IMAGE_PIXELS = 25_000_000`, EXIF orientation normalization, grayscale conversion, and contrast enhancement completely in-memory (`io.BytesIO`). Tesseract executable path discovery across settings, PATH, and standard Windows/Linux locations. If missing, endpoint returns 503 Service Unavailable ("Image text extraction is temporarily unavailable.") without crashing or generating fake data. |
+| **Reason**             | Zero disk I/O eliminates path traversal, symlink attacks, and temp file leakage. Fully self-contained on-premise pipeline maintains privacy and requires no paid third-party API keys. Graceful degradation allows development and deployment flexibility, while automated integration tests mock OCR for 100% test reliability. |
+| **Impact**             | Endpoint `POST /api/v1/analyze/image` requiring authentication, backward-compatible `AnalysisResult` persistence with `input_type="image"`, title set to sanitized filename, and original text set to cleaned OCR text; interactive UI with drag-and-drop, preview, and OCR display. |
+| **Future Considerations** | Support additional regional languages by bundling Tesseract traineddata packages in the Docker container; explore lightweight OCR alternatives (EasyOCR / PaddleOCR) with ONNX Runtime in Phase 5. |
+
+### ADR-016: Gradient × Input Token Attribution for Model Explainability
+
+| Field                  | Detail                                                              |
+| ---------------------- | ------------------------------------------------------------------- |
+| **Date**               | 2026-09-09                                                          |
+| **Status**             | Accepted                                                            |
+| **Problem**            | How should VeritasAI explain XLM-RoBERTa predictions (credibility and sentiment) at the token level without retraining models, replacing weights, adding multi-second latency to ordinary inference, or misleading users with claims of causal/factual proof? |
+| **Options Considered** | 1. KernelSHAP / Partition SHAP (requires thousands of model evaluations, 10–30s latency on CPU). 2. Integrated Gradients with 50 Riemann steps (requires 50 forward/backward passes, 15+ seconds on CPU). 3. LIME perturbation sampling (stochastic, high CPU overhead, inconsistent across runs). 4. Single-pass Gradient × Input on input embeddings targeting the predicted class logit, executed strictly on-demand. |
+| **Chosen Solution**    | Option 4: On-demand Gradient × Input ($A_i = \sum_d \nabla_{E_i} L_{c^*} \odot E_{i,d}$) on the embedding layer targeting the predicted class logit. SentencePiece subwords (`\u2581`) are aggregated into whole words, special tokens (`<s>`, `</s>`, `<pad>`, `<unk>`) discarded, and scores normalized to $[0.0, 1.0]$. The sign is explicitly interpreted: positive attribution = contribution toward the predicted-class logit (`"supporting"`); negative attribution = contribution away from it (`"opposing"`). All explanations are accompanied by an educational disclaimer framing the output as model sensitivity rather than causal or factual proof. Run strictly on-demand via authenticated `POST /api/v1/explain/text`. |
+| **Reason**             | High computational efficiency (~260–270ms per model on CPU vs 15+ seconds for IG), deterministic outputs, zero changes to existing model inference or weights, transparent presentation of model sensitivity without pseudo-scientific certainty, and decoupled on-demand execution keeping regular analysis fast. |
+| **Impact**             | Dedicated `backend/app/modules/explainability/` module; authenticated `POST /api/v1/explain/text` endpoint; reusable `ExplainabilityPanel` in frontend supporting Text, URL (extracted article text), Image (cleaned OCR text), and History records (`original_text`); comprehensive integration test coverage. |
+### ADR-017: Presentation-Only Multilingual Translation Architecture and Deterministic Language Detection
+
+| Field                  | Detail                                                              |
+| ---------------------- | ------------------------------------------------------------------- |
+| **Date**               | 2026-09-09                                                          |
+| **Status**             | Accepted                                                            |
+| **Problem**            | How should VeritasAI provide multilingual accessibility and on-demand translation without distorting native XLM-RoBERTa inference, contaminating token explainability, fabricating detection confidence, or introducing privacy/availability vulnerabilities? |
+| **Options Considered** | 1. Translate foreign-language inputs to English before model inference. 2. Bundle large local neural machine translation models (e.g. NLLB-200 / MarianMT) into the backend server process. 3. Presentation-only translation architecture decoupled from inference: XLM-RoBERTa processes original text directly, language detection uses seeded deterministic analysis with strict non-fallback to English, and translation runs on-demand via a pluggable provider (MyMemory) with LRU caching, chunking, and graceful 503 fallback. |
+| **Chosen Solution**    | Option 3: XLM-RoBERTa models were fine-tuned directly on multilingual corpora and execute inference strictly on original, un-translated text. Language detection via `langdetect` is seeded (`seed = 0`) and strictly returns `unknown` (confidence `None`) when text is too short, symbol-only, or undetermined (never silently falling back to English). Translation is strictly on-demand for presentation via `POST /api/v1/translate`, cached in an in-memory TTL/LRU cache, and displays an educational disclaimer. Model inference and Gradient × Input attribution remain 100% bound to original text. |
+| **Reason**             | Preserves model classification accuracy by eliminating machine translation artifacts from the inference pipeline; respects linguistic diversity; prevents memory starvation on CPU instances; delivers high-speed responses while offering cross-lingual accessibility. |
+| **Impact**             | `backend/app/modules/translation/` module with `GET /api/v1/languages` and `POST /api/v1/translate`; `TranslationPanel` in frontend integrated into `AnalyzePage` and `HistoryPage`; 16 backend integration tests and 5 Vitest frontend tests; full test suite passing. |
+| **Future Considerations** | Add optional local translation engine (e.g., MarianMT/CTranslate2) behind the `TranslationProvider` protocol for offline air-gapped deployments in Phase 5. |
+
 ---
+
+
 
 ## Template for New Decisions
 

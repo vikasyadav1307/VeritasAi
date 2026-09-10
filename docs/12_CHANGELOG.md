@@ -109,7 +109,52 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - Added `AnalyzeUrlRequest`, `AnalyzeUrlResponse`, and `analyzeUrl` API function in `frontend/src/services/api.ts`
 - Added `ADR-014: Public URL Ingestion with Multi-Layer SSRF Defenses and HTML Article Extraction` to `docs/10_TECHNICAL_DECISIONS.md`
 
+#### Milestone 3.5 — Image Analysis / OCR Ingestion & Processing (2026-09-09)
+- Created `backend/app/modules/image_analysis/` with:
+  - `security.py`: Stream reader bounded to 10 MB in 64 KB chunks, strict magic bytes verification (JPEG, PNG, WEBP; explicit rejection of PDF, SVG, HTML, binaries, archives), Pillow `verify()` checks, decompression bomb defense (`MAX_IMAGE_PIXELS = 25_000_000`), minimum dimension guard (10x10 px), and filename sanitization.
+  - `services.py`: `ImagePreprocessor` (EXIF orientation normalization, alpha flattening, grayscale conversion, contrast enhancement, Lanczos upscaling for small images), `OcrEngine` (dynamic Tesseract executable path discovery across settings, PATH, and standard Windows/Linux locations; graceful `OcrUnavailableError`), `TextCleaner` (whitespace & control character normalization, 15-char minimum threshold), and `ImageAnalysisService` orchestrator.
+  - `schemas.py`: Pydantic V2 `AnalyzeImageResponse` model.
+  - `router.py`: `POST /api/v1/analyze/image` endpoint with strict authentication, in-memory processing via `io.BytesIO`, error mapping (400 for bad format/too large/malformed, 401 unauthenticated, 422 validation/insufficient text, 503 unavailable OCR engine), and persistence to `AnalysisResult` (`input_type="image"`, `title=filename`, `original_text=cleaned_text`).
+- Added backend integration test suite in `backend/tests/integration/test_image_analysis.py` (24 tests covering security, magic bytes, dimensions, decompression bombs, auth, OCR quality/fallback, DB persistence, and History/Dashboard reflection). Total backend test suite now 108 tests passing.
+- Frontend Image Analysis & OCR integration:
+  - Enabled Image tab on `AnalyzePage.tsx` with drag-and-drop zone, file picker, client-side format/size validation, thumbnail preview, and loading indicators.
+  - Added OCR results display card with filename, language, character count, and copyable extracted text container alongside credibility and sentiment score cards.
+  - Updated `HistoryPage.tsx` with `Image OCR` badge and modal inspection display showing image filename and extracted text.
+  - Added `AnalyzeImageResponse` and `analyzeImage(file: File)` to `frontend/src/services/api.ts`.
+- Added `ADR-015: In-Memory Image Preprocessing, Security Defenses, and Multi-Engine OCR Ingestion` to `docs/10_TECHNICAL_DECISIONS.md`.
+
+#### Milestone 3.6 — Model Prediction Explainability (Gradient × Input Token Attribution) (2026-09-09)
+- Created `backend/app/modules/explainability/`:
+  - `schemas.py`: Pydantic V2 schemas for `AttributedToken` (`token`, `importance`, `direction`, `raw_score`, `score`, `normalized_score`), `ModelExplanation` (`model`, `predicted_label`, `confidence`, `method`, `tokens`, `latency_ms`, `explanation_note`), `ExplainRequest` (10–50,000 chars), and `ExplainResponse` with educational disclaimer.
+  - `services.py`: `TokenAttributionEngine` executing Gradient × Input ($A_i = \sum_d \nabla_{E_i} L_{c^*} \odot E_{i,d}$) backpropagating from the predicted class logit to input embeddings for both multilingual XLM-RoBERTa models; SentencePiece subword stitching (`\u2581`) into whole words; special token removal (`<s>`, `</s>`, `<pad>`, `<unk>`); sign interpretation: positive attribution = contribution toward predicted-class logit (`"supporting"`), negative attribution = contribution away from predicted-class logit (`"opposing"`); `ExplainabilityService` orchestration.
+  - `router.py`: Authenticated `POST /api/v1/explain/text` endpoint returning on-demand attribution estimates without affecting ordinary inference latency.
+- Added backend integration test suite in `backend/tests/integration/test_explainability.py` (9 tests covering auth, input validation, disclaimer verification, sign interpretation, subword merging, and mock/real inference). Total test suite expanded to 117 tests passing.
+- Frontend Explainability Integration:
+  - Created `frontend/src/features/analyze/components/ExplainabilityPanel.tsx` with on-demand trigger button, educational disclaimer, Credibility/Sentiment model tabs, supporting/opposing filter chips, interactive token heatmap cloud, score tooltips, and ranked influence breakdown.
+  - Updated `AnalyzePage.tsx` with `ExplainabilityPanel` operating on actual analyzed text (submitted text for Text tab, extracted article text for URL tab, and cleaned OCR text for Image tab).
+  - Updated `HistoryPage.tsx` detail modal to embed `ExplainabilityPanel` analyzing stored `selectedItem.original_text`.
+  - Added `Explainability.test.tsx` (5 Vitest unit and integration tests passing).
+- Added `ADR-016: Gradient × Input Token Attribution for Model Explainability` to `docs/10_TECHNICAL_DECISIONS.md`.
+
+#### Milestone 3.7 — Multilingual Language Detection & Presentation Translation (2026-09-09)
+- Created `backend/app/modules/translation/`:
+  - `detector.py`: Deterministic `LanguageDetector` using `langdetect` (`seed = 0`), strict non-fallback behavior returning `"unknown"` with confidence `None` for short or symbol-only inputs.
+  - `languages.py`: Comprehensive language registry with 14 supported languages (English, Hindi, Bengali, Tamil, Telugu, Marathi, Urdu, Gujarati, Kannada, Malayalam, Punjabi, Spanish, French, German), ISO-639-1 code normalization, and display names.
+  - `services.py`: Decoupled `TranslationService` with `TranslationProvider` protocol, `MyMemoryTranslationProvider` handling URL chunking and safe HTML decoding, in-memory LRU caching, and graceful 503 fallback; preserves core ML model inference and explainability on original text.
+  - `schemas.py`: Pydantic V2 schemas (`SupportedLanguage`, `LanguagesResponse`, `TranslateRequest`, `TranslateResponse`).
+  - `router.py`: `GET /api/v1/languages` and `POST /api/v1/translate` REST endpoints.
+- Updated `AnalyzeResponse` and `analyze_text` router to execute language detection on original text without mutating model input.
+- Added backend integration test suite in `backend/tests/integration/test_translation.py` (16 tests covering language detection, non-fallback, caching, failure modes, and API contracts). Total backend test suite now 133 tests passing.
+- Frontend Multilingual Integration:
+  - Created `frontend/src/features/analyze/components/TranslationPanel.tsx` with collapsible presentation, source language auto-detection, target selector, side-by-side original/translated cards, copy buttons, and educational disclaimer.
+  - Integrated `TranslationPanel` into `AnalyzePage.tsx` and `HistoryPage.tsx`.
+  - Added `Translation.test.tsx` (5 Vitest unit and integration tests passing). Full frontend test suite now 17 tests passing.
+  - Added multilingual verification and latency benchmark script `scripts/benchmark_multilingual.py`.
+- Added `ADR-017: Presentation-Only Multilingual Translation Architecture and Deterministic Language Detection` to `docs/10_TECHNICAL_DECISIONS.md`.
+
 ### Changed
+
+
 
 #### Sprint 2b — API Hardening (2026-08-21)
 - `analysis/router.py` — Pydantic V2 models, `is_mock` flag, `processing_time_ms`, structured errors

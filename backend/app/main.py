@@ -23,6 +23,9 @@ from app.modules.url_analysis.router import router as url_analysis_router
 from app.modules.history.router import router as history_router
 from app.modules.auth.router import router as auth_router
 from app.modules.dashboard.router import router as dashboard_router
+from app.modules.image_analysis.router import router as image_analysis_router
+from app.modules.explainability.router import router as explainability_router
+from app.modules.translation.router import router as translation_router
 
 logger = structlog.get_logger(__name__)
 
@@ -99,6 +102,9 @@ def create_app() -> FastAPI:
     app.include_router(auth_router, prefix="/api/v1")
     app.include_router(analysis_router, prefix="/api/v1")
     app.include_router(url_analysis_router, prefix="/api/v1")
+    app.include_router(image_analysis_router, prefix="/api/v1")
+    app.include_router(explainability_router, prefix="/api/v1")
+    app.include_router(translation_router, prefix="/api/v1")
     app.include_router(history_router, prefix="/api/v1")
     app.include_router(dashboard_router, prefix="/api/v1")
 

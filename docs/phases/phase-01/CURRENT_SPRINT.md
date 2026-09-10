@@ -1,16 +1,16 @@
-# Phase 3 — Milestone 3.4: URL Analysis
+# Phase 3 — Milestone 3.6: Explainability (Gradient × Input Token Attribution)
 
 | Field | Value |
-|-------|-------|
+|---|---|
 | **Phase** | 3 — Core Platform Features |
-| **Milestone** | 3.4: URL Analysis |
+| **Milestone** | 3.6: Explainability (Gradient × Input Token Attribution) |
 | **Started** | 2026-09-09 |
 | **Target End** | 2026-09-09 |
 | **Status** | Implemented & Verified (Uncommitted) |
 
 ## Sprint Objective
 
-Implement a secure, robust public article URL analysis pipeline for VeritasAI supporting multi-layer SSRF defense (syntactic validation, DNS resolution, IP range rejection, redirect destination validation, and rebinding mitigations), safe HTTP streaming, boilerplate-free BeautifulSoup article body/title extraction, language detection, XLM-RoBERTa credibility/sentiment inference, authenticated history persistence, and frontend interactive UI.
+Implement a token-level gradient attribution layer for VeritasAI's multilingual XLM-RoBERTa models (Fake News detection and Sentiment Analysis). Using Gradient × Input ($A_i = \sum_d \nabla_{E_i} L_{c^*} \odot E_{i,d}$) on input embeddings targeting the predicted class logit, explain which words contributed toward or away from the model's prediction. Present explanations with educational non-causal disclaimers, on-demand execution, subword stitching, supporting/opposing direction classifications, normalized importance scores, and latency tracking across Text, URL, Image OCR, and History modalities.
 
 ## Prerequisites — VERIFIED
 
@@ -19,84 +19,54 @@ Implement a secure, robust public article URL analysis pipeline for VeritasAI su
 | Milestone 3.1: Analysis History Persistence | ✅ Done & Verified |
 | Milestone 3.2: Analytics Dashboard | ✅ Implemented & Verified |
 | Milestone 3.3: Authentication & IDOR Protection | ✅ Implemented & Verified |
+| Milestone 3.4: URL Analysis & SSRF Defenses | ✅ Implemented & Verified |
+| Milestone 3.5: Image Analysis / OCR | ✅ Implemented & Verified |
 | XLM-RoBERTa real inference pipeline | ✅ Verified |
 | PostgreSQL database running / Alembic ready | ✅ Verified |
 | React frontend running / building | ✅ Verified |
 
 ## Tasks
 
-### Backend Authentication & Authorization
-- [x] Create `User` database model (`backend/app/models/user.py`):
-  - UUID primary key, unique email, unique username, hashed_password, is_active, timestamps, soft-delete
-- [x] Create Alembic migration `671939c98ccd_create_users_table.py` with foreign key `fk_analysis_results_user_id_users` (`ondelete="SET NULL"`)
-- [x] Create `backend/app/modules/auth/security.py`:
-  - Secure bcrypt password hashing and verification
-  - HS256 short-lived access tokens (15m) and refresh tokens (7d) using environment secrets
-- [x] Create `backend/app/modules/auth/schemas.py`:
-  - `RegisterRequest`, `LoginRequest`, `RefreshRequest`, `UserResponse`, `AuthResponse`
-- [x] Create `backend/app/modules/auth/dependencies.py`:
-  - `get_current_user`: extracts token, validates claims, fetches user from DB, enforces active status, raises 401
-  - `get_optional_user`: allows anonymous access while parsing Bearer tokens when present
-- [x] Create `backend/app/modules/auth/router.py`:
-  - `POST /api/v1/auth/register` (201 Created, duplicate checking for email & username)
-  - `POST /api/v1/auth/login` (200 OK, credential verification, JWT issuance)
-  - `POST /api/v1/auth/refresh` (200 OK, refresh token exchange)
-  - `POST /api/v1/auth/logout` (200 OK, session invalidation)
-  - `GET /api/v1/auth/me` (200 OK, authenticated user profile)
-- [x] Mount `auth_router` in `backend/app/main.py` under `/api/v1`
+### Backend Explainability Module
+- [x] Create `backend/app/modules/explainability/schemas.py`:
+  - `AttributedToken` (`token`, `importance`, `direction`, `raw_score`, `score`, `normalized_score`)
+  - `ModelExplanation` (`model`, `predicted_label`, `confidence`, `method`, `tokens`, `latency_ms`, `explanation_note`)
+  - `ExplainRequest` (10–50,000 chars)
+  - `ExplainResponse` (`credibility`, `sentiment`, `total_latency_ms`, `disclaimer`)
+- [x] Create `backend/app/modules/explainability/services.py`:
+  - `TokenAttributionEngine`: Gradient × Input backpropagation on input embeddings targeting predicted class logit
+  - SentencePiece subword aggregation (`\u2581`) into whole words, special token removal (`<s>`, `</s>`, `<pad>`, `<unk>`)
+  - Sign interpretation: positive = `"supporting"` (toward predicted class logit), negative = `"opposing"` (away from it)
+  - Normalized importance: $[0.0, 1.0]$ with highest magnitude token at 1.0
+  - `ExplainabilityService`: Orchestrator for credibility and sentiment model attributions
+- [x] Create `backend/app/modules/explainability/router.py`:
+  - `POST /api/v1/explain/text` authenticated via `get_current_user`
+  - Returns unified `ExplainResponse`
+- [x] Mount `explainability_router` in `backend/app/main.py` under `/api/v1`
+- [x] Add optional `extracted_text` field to `AnalyzeUrlResponse` in `backend/app/modules/url_analysis/schemas.py` and `router.py`
 
-### IDOR Hardening & Scoping
-- [x] Update `backend/app/modules/history/router.py`:
-  - Require `current_user: User = Depends(get_current_user)` on list, item detail, and delete
-  - Scope list query strictly to `AnalysisResult.user_id == current_user.id`
-  - Enforce ownership check on `GET /history/{id}` and `DELETE /history/{id}`, returning 403 Forbidden for cross-user attempts
-- [x] Update `backend/app/modules/dashboard/router.py`:
-  - Require `current_user: User = Depends(get_current_user)`
-  - Scope all KPI aggregations and distributions strictly to `AnalysisResult.user_id == current_user.id`
-  - Ignore/disallow client-supplied `user_id` query parameters
-- [x] Update `backend/app/modules/analysis/router.py`:
-  - Associate analysis with `current_user.id` when authenticated
-  - Roll back session on database save error to prevent transaction leakage
+### Milestone 3.7 — Multilingual Language Detection & Presentation Translation
+- [x] Create `backend/app/modules/translation/`:
+  - `detector.py`: Deterministic `LanguageDetector` with `langdetect` (`seed = 0`), strict non-fallback returning `"unknown"` with confidence `None` for short/symbol text
+  - `languages.py`: 14 supported languages registry, code normalization, and display names
+  - `schemas.py`: Pydantic V2 schemas for language registry and translation requests/responses
+  - `services.py`: Decoupled `TranslationService` with `MyMemoryTranslationProvider`, LRU caching, chunking, and 503 fallback
+  - `router.py`: `GET /api/v1/languages` and `POST /api/v1/translate` endpoints
+- [x] Mount `translation_router` in `backend/app/main.py`
+- [x] Update `backend/app/modules/analysis/router.py` to include detected language in `AnalyzeResponse` without altering model inputs
+- [x] Create backend integration test suite `backend/tests/integration/test_translation.py` (16 tests)
+- [x] Run full backend test suite: **133 tests passing with 0 failures**
+- [x] Create frontend `TranslationPanel.tsx` in `frontend/src/features/analyze/components/`
+- [x] Integrate `TranslationPanel` into `AnalyzePage.tsx` and `HistoryPage.tsx`
+- [x] Create frontend Vitest suite `frontend/src/features/analyze/pages/Translation.test.tsx` (5 tests)
+- [x] Full frontend Vitest suite: **17 tests passing with 0 failures**
+- [x] Production build clean: `npm --prefix frontend run build` succeeds in ~1.5s
+- [x] Add experimental benchmark script `scripts/benchmark_multilingual.py`
 
-### Frontend Authentication & Protected Routes
-- [x] Update `frontend/src/store/auth.store.ts`:
-  - Token persistence in localStorage with loading state tracking
-  - Synchronous hydration and reactive store updates
-- [x] Update `frontend/src/services/api.ts`:
-  - Added Auth types (`RegisterRequest`, `LoginRequest`, `AuthResponse`)
-  - Added `registerUser()`, `loginUser()`, `logoutUser()`, `refreshAccessToken()`, `getCurrentUser()`
-  - Axios request interceptor attaches Bearer token
-  - Axios response interceptor handles 401 token refresh queue
-- [x] Update `frontend/src/app/Providers.tsx`:
-  - `AuthInitializer` validates token via `/auth/me` on startup
-- [x] Update `frontend/src/app/Router.tsx`:
-  - `ProtectedRoute` protects `/analyze`, `/history`, `/dashboard`
-  - `GuestRoute` redirects authenticated users away from `/login` and `/register`
-- [x] Update `frontend/src/features/auth/pages/LoginPage.tsx`:
-  - Form validation with Zod + React Hook Form, safe error display
-- [x] Update `frontend/src/features/auth/pages/RegisterPage.tsx`:
-  - Form validation with Zod + React Hook Form, safe error display
-- [x] Update `frontend/src/components/layout/Header.tsx`:
-  - User badge dropdown showing username and email
-  - Functional "Sign Out" action calling `logoutUser()`
-
-### Testing & Verification
-- [x] Added in-memory SQLite fixture with StaticPool in `backend/tests/conftest.py`
-- [x] Implemented 14-point test suite in `backend/tests/integration/test_auth.py`
-- [x] Verified full backend pytest suite (34 tests passed)
-- [x] Verified Vitest tests (`src/app/App.test.tsx` passed)
-- [x] Verified frontend production build (`tsc -b && vite build` succeeded with 0 errors)
-- [x] Verified Alembic migration generation (`alembic upgrade head --sql` produces valid DDL)
-- [x] Checked `git status`: NO commits, NO pushes, working tree preserved
-
-## Definition of Done
-
-1. ✅ Full auth lifecycle functional: register, login, refresh, logout, profile
-2. ✅ Password security implemented with bcrypt; tokens implemented with HS256 JWT
-3. ✅ Strict IDOR prevention: History and Dashboard strictly scoped to authenticated user
-4. ✅ Protected routes enforced on both backend and frontend
-5. ✅ Historical analysis records with nullable user_id preserved
-6. ✅ 34 backend tests passing with 100% success rate
-7. ✅ Frontend TypeScript and Vite build passing with 0 errors
-8. ✅ Working tree uncommitted and ready for full Phase 3 user review
+### Documentation & Architecture
+- [x] Add `ADR-016: Gradient × Input Token Attribution for Model Explainability` to `docs/10_TECHNICAL_DECISIONS.md`
+- [x] Add `ADR-017: Presentation-Only Multilingual Translation Architecture and Deterministic Language Detection` to `docs/10_TECHNICAL_DECISIONS.md`
+- [x] Update `docs/09_PROGRESS_LOG.md`
+- [x] Update `docs/12_CHANGELOG.md`
+- [x] Update `docs/prompts/ai_context.md`
 

@@ -213,6 +213,7 @@ async def analyze_url(
         source_url=results["source_url"],
         final_url=results["final_url"],
         extracted_title=results["title"],
+        extracted_text=results.get("extracted_text"),
         detected_language=results["detected_language"],
         character_count=results["character_count"],
         credibility=CredibilityResult(

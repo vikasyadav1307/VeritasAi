@@ -18,9 +18,9 @@ Codename: **VeritasAI**. Solo-developer FYP. 16-week timeline.
 ## Current State
 
 - **Phase**: 3 — Core Platform Features
-- **Milestone**: 3.4 — URL Analysis (Implemented & Verified, awaiting review)
-- **Status**: Multi-layer SSRF defense active (DNS resolution, private/loopback/link-local/carrier-grade IP blocking, independent redirect destination validation, size caps); safe HTTP streaming; BeautifulSoup article text and metadata extraction; XLM-RoBERTa real model inference; user-scoped history persistence with `source_url` and `title`; frontend dual Text/URL Analyze page live. 79/79 backend tests and frontend build passing. Uncommitted in working tree alongside Milestones 3.2 and 3.3.
-- **Next**: Milestone 3.5 — LIME / SHAP Explainability
+- **Milestone**: 3.7 — Multilingual Language Detection & Presentation Translation (Implemented & Verified, awaiting review)
+- **Status**: Full Phase 3 capabilities active: Real XLM-RoBERTa inference, history persistence, analytics dashboard, JWT authentication & IDOR defenses, SSRF-protected URL analysis, bounded in-memory OCR image analysis, token-level Gradient × Input explainability, and deterministic language detection with on-demand presentation translation. Full test suites passing: 133/133 backend tests and 17/17 frontend Vitest tests.
+- **Next**: Phase 4 — Platform & Operational Hardening (Export, Rate Limiting, Admin) or Phase 5 (ONNX runtime optimization)
 
 ## Completed Work
 
@@ -36,9 +36,12 @@ Codename: **VeritasAI**. Solo-developer FYP. 16-week timeline.
 
 ### Phase 3 — Core Platform Features
 - **Milestone 3.1 (History)**: `AnalysisResult` SQLAlchemy model, Alembic migration, `history_router` with pagination & soft deletion, interactive `HistoryPage.tsx` with modal & delete. (Committed & pushed: `2cd5bcd`)
-- **Milestone 3.2 (Dashboard)**: `dashboard_router` with `GET /api/v1/dashboard/summary`, SQL aggregations, `DashboardPage.tsx` with KPI cards, dual-segment credibility ratio bar, three-segment sentiment spectrum bar, language breakdown, recent analyses, inspection modal. (Implemented & verified, uncommitted)
-- **Milestone 3.3 (Authentication)**: `User` model, Alembic migration with FK to `analysis_results`, `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`, `GET /auth/me`, JWT + bcrypt security, `get_current_user` and `get_optional_user` dependencies, strict IDOR prevention on history & dashboard, React auth store with auto-refresh/interceptors, protected routes (`/analyze`, `/history`, `/dashboard`), guest routes (`/login`, `/register`), user badge & logout dropdown. (Implemented & verified, uncommitted)
-- **Milestone 3.4 (URL Analysis)**: `backend/app/modules/url_analysis/` module with `POST /api/v1/analyze/url`, multi-layer SSRF defenses (`security.py`), safe HTTP streaming fetcher with independent redirect hop validation, BeautifulSoup article extraction, Alembic migration adding `source_url` and `title`, user-scoped history integration, frontend Analyze URL tab with metadata banner, 45 unit/integration tests (79 total suite). (Implemented & verified, uncommitted)
+- **Milestone 3.2 (Dashboard)**: `dashboard_router` with `GET /api/v1/dashboard/summary`, SQL aggregations, `DashboardPage.tsx` with KPI cards, dual-segment credibility ratio bar, three-segment sentiment spectrum bar, language breakdown, recent analyses, inspection modal. (Implemented & verified)
+- **Milestone 3.3 (Authentication)**: `User` model, Alembic migration with FK to `analysis_results`, `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`, `GET /auth/me`, JWT + bcrypt security, `get_current_user` and `get_optional_user` dependencies, strict IDOR prevention on history & dashboard, React auth store with auto-refresh/interceptors, protected routes (`/analyze`, `/history`, `/dashboard`), guest routes (`/login`, `/register`), user badge & logout dropdown. (Implemented & verified)
+- **Milestone 3.4 (URL Analysis)**: `backend/app/modules/url_analysis/` module with `POST /api/v1/analyze/url`, multi-layer SSRF defenses (`security.py`), safe HTTP streaming fetcher with independent redirect hop validation, BeautifulSoup article extraction, Alembic migration adding `source_url` and `title`, user-scoped history integration, frontend Analyze URL tab with metadata banner, 45 unit/integration tests (84 total suite). (Implemented & verified)
+- **Milestone 3.5 (Image Analysis / OCR)**: `backend/app/modules/image_analysis/` module with `POST /api/v1/analyze/image`, in-memory stream bounds (10 MB), strict magic byte verification, decompression bomb protection, EXIF transpose, grayscale, contrast enhancement, Lanczos upscaling, dynamic Tesseract binary discovery with graceful 503 fallback, text cleaning, language detection, XLM-RoBERTa model inference, user-scoped DB persistence (`input_type="image"`), frontend Image tab with dropzone, thumbnail preview, and copyable OCR text card, 24 unit/integration tests (108 total suite). (Implemented & verified)
+- **Milestone 3.6 (Explainability)**: `backend/app/modules/explainability/` module with `POST /api/v1/explain/text`, Gradient × Input token attribution targeting predicted class logit, SentencePiece subword stitching into words, supporting/opposing sign interpretation, normalized importance magnitude [0.0, 1.0], educational non-causal disclaimer, reusable frontend `ExplainabilityPanel` integrated into `AnalyzePage` and `HistoryPage`, 9 backend tests (117 total suite) and 5 vitest frontend tests (12 total suite). (Implemented & verified)
+- **Milestone 3.7 (Multilingual Translation)**: `backend/app/modules/translation/` module with `GET /api/v1/languages` and `POST /api/v1/translate`, deterministic `LanguageDetector` with strict non-fallback to English, 14-language registry, decoupled `TranslationService` with MyMemory provider, LRU caching, and graceful 503 fallback, reusable frontend `TranslationPanel` integrated into `AnalyzePage` and `HistoryPage`, 16 backend integration tests (133 total suite) and 5 vitest frontend tests (17 total suite). (Implemented & verified)
 
 ## Folder Structure
 
@@ -69,6 +72,10 @@ veritasai/
 | GET    | /api/v1/auth/me           | Bearer  | ✅ Working (200) |
 | POST   | /api/v1/analyze/text      | Optional| ✅ Working (real model) |
 | POST   | /api/v1/analyze/url       | Bearer  | ✅ Working (SSRF-protected) |
+| POST   | /api/v1/analyze/image     | Bearer  | ✅ Working (OCR + NLP) |
+| POST   | /api/v1/explain/text      | Bearer  | ✅ Working (Grad × Input) |
+| GET    | /api/v1/languages         | Public  | ✅ Working (14 languages) |
+| POST   | /api/v1/translate         | Public  | ✅ Working (presentation-only) |
 | GET    | /api/v1/history           | Bearer  | ✅ Working (user-scoped) |
 | GET    | /api/v1/history/{id}      | Bearer  | ✅ Working (ownership check) |
 | DELETE | /api/v1/history/{id}      | Bearer  | ✅ Working (ownership check) |

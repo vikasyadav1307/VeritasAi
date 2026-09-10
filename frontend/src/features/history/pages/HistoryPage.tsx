@@ -17,6 +17,7 @@ import {
   X,
   FlaskConical,
   ExternalLink,
+  Image as ImageIcon,
 } from 'lucide-react';
 import {
   getHistory,
@@ -24,6 +25,8 @@ import {
   type HistoryItem,
   type PaginatedHistoryResponse,
 } from '../../../services/api';
+import { ExplainabilityPanel } from '../../analyze/components/ExplainabilityPanel';
+import { TranslationPanel } from '../../analyze/components/TranslationPanel';
 
 function formatProcessingTime(ms: number): string {
   if (ms < 1000) return `${Math.round(ms)} ms`;
@@ -355,6 +358,38 @@ export default function HistoryPage() {
                         <FlaskConical size={11} /> Mock
                       </span>
                     )}
+
+                    {item.input_type === 'image' && (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '2px 8px',
+                        borderRadius: 'var(--radius-full)',
+                        fontSize: 'var(--text-xs)',
+                        color: 'var(--color-primary-400)',
+                        background: 'rgba(99, 102, 241, 0.12)',
+                        border: '1px solid rgba(99, 102, 241, 0.25)',
+                      }}>
+                        <ImageIcon size={11} /> Image OCR
+                      </span>
+                    )}
+
+                    {item.input_type === 'url' && (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '2px 8px',
+                        borderRadius: 'var(--radius-full)',
+                        fontSize: 'var(--text-xs)',
+                        color: 'var(--color-primary-400)',
+                        background: 'rgba(99, 102, 241, 0.12)',
+                        border: '1px solid rgba(99, 102, 241, 0.25)',
+                      }}>
+                        <ExternalLink size={11} /> URL
+                      </span>
+                    )}
                   </div>
 
                   <div style={{
@@ -680,7 +715,28 @@ export default function HistoryPage() {
               </div>
             )}
 
-            {/* Submitted Text Content */}
+            {/* Image Filename (for Image analyses) */}
+            {selectedItem.input_type === 'image' && selectedItem.title && (
+              <div style={{
+                background: 'var(--bg-elevated)',
+                border: '1px solid var(--border-color)',
+                borderRadius: 'var(--radius-md)',
+                padding: 'var(--space-3) var(--space-4)',
+                fontSize: 'var(--text-xs)',
+                marginBottom: 'var(--space-4)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-2)',
+              }}>
+                <ImageIcon size={14} style={{ color: 'var(--color-primary-400)', flexShrink: 0 }} />
+                <span style={{ fontWeight: 'var(--font-semibold)', color: 'var(--text-muted)' }}>IMAGE FILE:</span>
+                <span style={{ color: 'var(--text-primary)', fontWeight: 'var(--font-medium)', wordBreak: 'break-all' }}>
+                  {selectedItem.title}
+                </span>
+              </div>
+            )}
+
+            {/* Submitted Text / OCR Content */}
             <div>
               <p style={{
                 fontSize: 'var(--text-xs)',
@@ -690,7 +746,11 @@ export default function HistoryPage() {
                 letterSpacing: '0.05em',
                 marginBottom: 'var(--space-2)',
               }}>
-                Submitted Text Content ({selectedItem.original_text.length} characters)
+                {selectedItem.input_type === 'image'
+                  ? `Extracted OCR Text (${selectedItem.original_text.length} characters)`
+                  : selectedItem.input_type === 'url'
+                    ? `Extracted Article Body (${selectedItem.original_text.length} characters)`
+                    : `Submitted Text Content (${selectedItem.original_text.length} characters)`}
               </p>
               <div style={{
                 background: 'var(--bg-elevated)',
@@ -706,6 +766,23 @@ export default function HistoryPage() {
               }}>
                 {selectedItem.original_text}
               </div>
+            </div>
+
+            {/* Explainability Section */}
+            <div style={{ marginTop: 'var(--space-4)' }}>
+              <ExplainabilityPanel
+                textToExplain={selectedItem.original_text}
+                title="Historical Prediction Explainability"
+              />
+            </div>
+
+            {/* Translation Section */}
+            <div style={{ marginTop: 'var(--space-4)' }}>
+              <TranslationPanel
+                originalText={selectedItem.original_text}
+                detectedLanguage={selectedItem.detected_language}
+                title="Historical Text Translation & Presentation"
+              />
             </div>
 
             {/* Modal Footer */}

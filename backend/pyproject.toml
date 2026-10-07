@@ -22,8 +22,9 @@ dependencies = [
     "alembic>=1.13.0",
 
     # ── Validation & Settings ──
-    "pydantic>=2.7.0",
+    "pydantic[email]>=2.7.0",
     "pydantic-settings>=2.3.0",
+    "email-validator>=2.0.0",
 
     # ── Auth ──
     "python-jose[cryptography]>=3.3.0",

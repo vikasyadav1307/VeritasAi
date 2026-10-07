@@ -119,7 +119,15 @@ export function TranslationPanel({
   const displayLangName = languageName || (isUnknownLang ? 'Undetermined / Unknown' : detectedLanguage.toUpperCase());
 
   return (
-    <div className="bg-slate-900/60 border border-slate-800 rounded-xl overflow-hidden shadow-lg mb-6 backdrop-blur-sm transition-all duration-200">
+    <div
+      style={{
+        background: '#111A22',
+        border: '1px solid #26343D',
+        borderRadius: '14px',
+        overflow: 'hidden',
+        marginBottom: 'var(--space-6)',
+      }}
+    >
       {/* Header Bar / Collapsible Toggle */}
       <div
         onClick={() => setIsOpen(!isOpen)}
@@ -131,24 +139,43 @@ export function TranslationPanel({
             setIsOpen(!isOpen);
           }
         }}
-        className="w-full px-5 py-4 flex items-center justify-between cursor-pointer hover:bg-slate-800/40 transition-colors"
+        style={{
+          width: '100%',
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          cursor: 'pointer',
+          background: '#17232C',
+        }}
       >
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-            <Languages className="w-5 h-5" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div
+            style={{
+              padding: '8px',
+              borderRadius: '8px',
+              background: '#202E39',
+              color: '#2CB7A5',
+              border: '1px solid #26343D',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Languages size={18} />
           </div>
           <div>
-            <h3 className="text-base font-semibold text-slate-100 flex items-center gap-2">
+            <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: '#F3F0E8', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
               {title}
-              <span className="text-xs font-normal text-slate-400 border border-slate-700 px-2 py-0.5 rounded-full">
+              <span style={{ fontSize: '0.6875rem', fontWeight: 500, color: '#9BA7AE', border: '1px solid #26343D', padding: '2px 8px', borderRadius: '4px' }}>
                 On-Demand
               </span>
             </h3>
-            <p className="text-xs text-slate-400">
+            <p style={{ fontSize: '0.75rem', color: '#6F7C84', margin: '2px 0 0 0' }}>
               Detected:{' '}
-              <span className="font-medium text-slate-200">{displayLangName}</span>
+              <span style={{ fontWeight: 600, color: '#F3F0E8' }}>{displayLangName}</span>
               {languageConfidence !== null && languageConfidence !== undefined && (
-                <span className="ml-1.5 text-indigo-400 font-mono text-[11px]">
+                <span style={{ marginLeft: '6px', color: '#2CB7A5', fontFamily: 'var(--font-mono)', fontSize: '0.6875rem' }}>
                   ({(languageConfidence * 100).toFixed(1)}% conf)
                 </span>
               )}
@@ -156,47 +183,79 @@ export function TranslationPanel({
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-slate-400 hidden sm:inline">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontSize: '0.75rem', color: '#9BA7AE' }}>
             {isOpen ? 'Collapse panel' : 'Translate for presentation'}
           </span>
-          <div className="p-1 rounded-md text-slate-400 hover:text-slate-200">
-            {isOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+          <div style={{ color: '#9BA7AE' }}>
+            {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
           </div>
         </div>
       </div>
 
       {/* Expanded Content Area */}
       {isOpen && (
-        <div className="p-5 border-t border-slate-800/80 space-y-5">
+        <div style={{ padding: '20px', borderTop: '1px solid #26343D', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {/* External Provider & Model Decoupling Notice */}
-          <div className="p-3.5 rounded-lg bg-blue-950/30 border border-blue-800/50 text-xs text-blue-200 flex items-start gap-2.5">
-            <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
-            <div className="space-y-1">
-              <p className="font-medium text-blue-100">
+          <div
+            style={{
+              padding: '12px 14px',
+              borderRadius: '8px',
+              background: '#17232C',
+              border: '1px solid #26343D',
+              fontSize: '0.75rem',
+              color: '#9BA7AE',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '10px',
+            }}
+          >
+            <Info size={16} style={{ color: '#2CB7A5', flexShrink: 0, marginTop: '2px' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <p style={{ fontWeight: 600, color: '#F3F0E8', margin: 0 }}>
                 Presentation Translation Disclaimer
               </p>
-              <p className="text-blue-300/90 leading-relaxed">
-                Translation is strictly optional and presentation-only (powered by external services). Model credibility, sentiment scoring, and token explainability are computed strictly on the <strong>original text</strong> to guarantee zero semantic distortion.
+              <p style={{ color: '#9BA7AE', margin: 0, lineHeight: 1.5 }}>
+                Translation is strictly optional and presentation-only (powered by external services). Model credibility, sentiment scoring, and token explainability are computed strictly on the <strong style={{ color: '#F3F0E8' }}>original text</strong> to guarantee zero semantic distortion.
               </p>
             </div>
           </div>
 
           {/* Controls Bar: Source Badge -> Target Selector -> Action Button */}
-          <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-950/40 rounded-lg border border-slate-800/60">
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-slate-400">Source:</span>
-              <span className="px-2 py-1 rounded bg-slate-800 text-slate-200 font-mono border border-slate-700">
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+              padding: '12px',
+              background: '#0E161E',
+              borderRadius: '8px',
+              border: '1px solid #26343D',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem' }}>
+              <span style={{ color: '#6F7C84' }}>Source:</span>
+              <span style={{ padding: '3px 8px', borderRadius: '4px', background: '#17232C', color: '#F3F0E8', fontFamily: 'var(--font-mono)', border: '1px solid #26343D' }}>
                 {displayLangName} ({detectedLanguage})
               </span>
-              <ArrowRight className="w-3.5 h-3.5 text-slate-500" />
-              <span className="text-slate-400">Target:</span>
+              <ArrowRight size={14} style={{ color: '#6F7C84' }} />
+              <span style={{ color: '#6F7C84' }}>Target:</span>
               <select
                 aria-label="Target translation language"
                 value={targetLang}
                 onChange={(e) => setTargetLang(e.target.value)}
                 disabled={isLoadingLangs || isTranslating}
-                className="bg-slate-900 text-slate-200 border border-slate-700 rounded px-2.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                style={{
+                  background: '#17232C',
+                  color: '#F3F0E8',
+                  border: '1px solid #26343D',
+                  borderRadius: '6px',
+                  padding: '4px 10px',
+                  fontSize: '0.75rem',
+                  outline: 'none',
+                }}
               >
                 {languages.map((l) => (
                   <option key={l.code} value={l.code}>
@@ -209,16 +268,29 @@ export function TranslationPanel({
             <button
               onClick={handleTranslate}
               disabled={isTranslating}
-              className="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium flex items-center gap-2 transition-all shadow-md shadow-indigo-600/20"
+              style={{
+                padding: '6px 14px',
+                borderRadius: '8px',
+                background: '#2CB7A5',
+                color: '#0B1117',
+                border: '1px solid #2CB7A5',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                cursor: isTranslating ? 'not-allowed' : 'pointer',
+                opacity: isTranslating ? 0.6 : 1,
+              }}
             >
               {isTranslating ? (
                 <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
                   Translating...
                 </>
               ) : (
                 <>
-                  <Globe className="w-3.5 h-3.5" />
+                  <Globe size={14} />
                   Translate Text
                 </>
               )}
@@ -227,82 +299,114 @@ export function TranslationPanel({
 
           {/* Error Message */}
           {error && (
-            <div className="p-3 rounded-lg bg-red-950/40 border border-red-800/60 text-xs text-red-300 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+            <div
+              style={{
+                padding: '10px 14px',
+                borderRadius: '8px',
+                background: 'rgba(232, 93, 93, 0.12)',
+                border: '1px solid rgba(232, 93, 93, 0.28)',
+                fontSize: '0.75rem',
+                color: '#E85D5D',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+            >
+              <AlertCircle size={15} style={{ flexShrink: 0 }} />
               <span>{error}</span>
             </div>
           )}
 
           {/* Dual Text Display: Original vs Translated */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
             {/* Original Text Card */}
-            <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 flex flex-col justify-between">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+            <div
+              style={{
+                padding: '16px',
+                borderRadius: '8px',
+                background: '#0E161E',
+                border: '1px solid #26343D',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+              }}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#F3F0E8', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <ShieldCheck size={14} style={{ color: '#35B98A' }} />
                     Original Analyzed Text
                   </span>
-                  <span className="text-[10px] text-emerald-400 font-mono bg-emerald-950/40 border border-emerald-800/50 px-2 py-0.5 rounded">
+                  <span style={{ fontSize: '0.625rem', color: '#35B98A', fontFamily: 'var(--font-mono)', background: 'rgba(53, 185, 138, 0.12)', border: '1px solid rgba(53, 185, 138, 0.25)', padding: '2px 6px', borderRadius: '4px' }}>
                     Used for XLM-R Inference
                   </span>
                 </div>
-                <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-800 text-xs text-slate-200 whitespace-pre-wrap max-h-60 overflow-y-auto leading-relaxed">
+                <div style={{ padding: '12px', borderRadius: '6px', background: '#17232C', border: '1px solid #26343D', fontSize: '0.75rem', color: '#F3F0E8', whiteSpace: 'pre-wrap', maxHeight: '240px', overflowY: 'auto', lineHeight: 1.6 }}>
                   {originalText || '(No text)'}
                 </div>
               </div>
 
-              <div className="mt-3 flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-800/60">
+              <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.6875rem', color: '#6F7C84', paddingTop: '8px', borderTop: '1px solid #26343D' }}>
                 <span>Length: {originalText.length} chars</span>
                 <button
                   onClick={() => copyToClipboard(originalText, true)}
-                  className="hover:text-slate-200 flex items-center gap-1 transition-colors"
+                  style={{ color: '#9BA7AE', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', background: 'none', border: 'none' }}
                 >
-                  {copiedOriginal ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copiedOriginal ? <Check size={13} style={{ color: '#35B98A' }} /> : <Copy size={13} />}
                   {copiedOriginal ? 'Copied' : 'Copy'}
                 </button>
               </div>
             </div>
 
             {/* Translated Presentation Card */}
-            <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 flex flex-col justify-between">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                    <Globe className="w-3.5 h-3.5 text-indigo-400" />
+            <div
+              style={{
+                padding: '16px',
+                borderRadius: '8px',
+                background: '#0E161E',
+                border: '1px solid #26343D',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+              }}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#F3F0E8', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Globe size={14} style={{ color: '#2CB7A5' }} />
                     Translated Presentation Text
                   </span>
-                  <span className="text-[10px] text-indigo-400 font-mono bg-indigo-950/40 border border-indigo-800/50 px-2 py-0.5 rounded">
+                  <span style={{ fontSize: '0.625rem', color: '#2CB7A5', fontFamily: 'var(--font-mono)', background: 'rgba(44, 183, 165, 0.12)', border: '1px solid rgba(44, 183, 165, 0.25)', padding: '2px 6px', borderRadius: '4px' }}>
                     {translationResult ? translationResult.target_lang_name : 'Pending'}
                   </span>
                 </div>
 
-                <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-800 text-xs text-slate-200 whitespace-pre-wrap max-h-60 overflow-y-auto leading-relaxed">
+                <div style={{ padding: '12px', borderRadius: '6px', background: '#17232C', border: '1px solid #26343D', fontSize: '0.75rem', color: '#F3F0E8', whiteSpace: 'pre-wrap', maxHeight: '240px', overflowY: 'auto', lineHeight: 1.6 }}>
                   {isTranslating ? (
-                    <div className="flex items-center justify-center py-8 text-slate-400 gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 0', color: '#9BA7AE', gap: '8px' }}>
+                      <Loader2 size={16} style={{ animation: 'spin 1s linear infinite', color: '#2CB7A5' }} />
                       <span>Requesting presentation translation...</span>
                     </div>
                   ) : translationResult ? (
                     translationResult.translated_text
                   ) : (
-                    <span className="text-slate-500 italic">
-                      Click "Translate Text" above to request translation for presentation.
+                    <span style={{ color: '#6F7C84', fontStyle: 'italic' }}>
+                      Click &quot;Translate Text&quot; above to request translation for presentation.
                     </span>
                   )}
                 </div>
               </div>
 
-              <div className="mt-3 flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-800/60">
+              <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.6875rem', color: '#6F7C84', paddingTop: '8px', borderTop: '1px solid #26343D' }}>
                 <span>
                   {translationResult ? `Provider: ${translationResult.provider}` : 'On-demand only'}
                 </span>
                 {translationResult && (
                   <button
                     onClick={() => copyToClipboard(translationResult.translated_text, false)}
-                    className="hover:text-slate-200 flex items-center gap-1 transition-colors"
+                    style={{ color: '#9BA7AE', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', background: 'none', border: 'none' }}
                   >
-                    {copiedTranslated ? <Check className="w-3.5 h-3.5 text-indigo-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiedTranslated ? <Check size={13} style={{ color: '#2CB7A5' }} /> : <Copy size={13} />}
                     {copiedTranslated ? 'Copied' : 'Copy'}
                   </button>
                 )}

@@ -78,7 +78,7 @@ export function ExplainabilityPanel({
         borderRadius: 'var(--radius-xl)',
         overflow: 'hidden',
         marginTop: 'var(--space-2)',
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+        boxShadow: 'none',
         transition: 'all var(--transition-normal)',
       }}
     >
@@ -89,7 +89,7 @@ export function ExplainabilityPanel({
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: 'var(--space-4) var(--space-6)',
-          background: 'rgba(99, 102, 241, 0.05)',
+          background: '#17232C',
           borderBottom: isOpen ? '1px solid var(--border-color)' : 'none',
           flexWrap: 'wrap',
           gap: 'var(--space-3)',
@@ -98,17 +98,18 @@ export function ExplainabilityPanel({
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
           <div
             style={{
-              width: '34px',
-              height: '34px',
+              width: '32px',
+              height: '32px',
               borderRadius: 'var(--radius-md)',
-              background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(168, 85, 247, 0.25))',
+              background: '#202E39',
+              border: '1px solid #26343D',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: 'var(--color-primary-400)',
+              color: '#2CB7A5',
             }}
           >
-            <Sparkles size={18} />
+            <Sparkles size={16} />
           </div>
           <div>
             <h3
@@ -141,15 +142,14 @@ export function ExplainabilityPanel({
                 padding: 'var(--space-2) var(--space-4)',
                 background: isLoading
                   ? 'var(--bg-elevated)'
-                  : 'linear-gradient(135deg, var(--color-primary-600), var(--color-primary-700))',
-                color: 'white',
-                border: 'none',
+                  : '#2CB7A5',
+                color: '#0B1117',
+                border: '1px solid #2CB7A5',
                 borderRadius: 'var(--radius-md)',
                 fontSize: 'var(--text-xs)',
                 fontWeight: 'var(--font-semibold)',
                 cursor: isLoading ? 'not-allowed' : 'pointer',
                 transition: 'all var(--transition-fast)',
-                boxShadow: '0 2px 8px rgba(99, 102, 241, 0.25)',
               }}
             >
               {isLoading ? (
@@ -225,16 +225,16 @@ export function ExplainabilityPanel({
             role="note"
             style={{
               padding: 'var(--space-3) var(--space-4)',
-              background: 'rgba(99, 102, 241, 0.06)',
-              border: '1px solid rgba(99, 102, 241, 0.2)',
-              borderRadius: 'var(--radius-lg)',
+              background: '#17232C',
+              border: '1px solid #26343D',
+              borderRadius: 'var(--radius-md)',
               display: 'flex',
               alignItems: 'flex-start',
               gap: 'var(--space-3)',
               marginBottom: 'var(--space-5)',
             }}
           >
-            <Info size={16} style={{ color: 'var(--color-primary-400)', flexShrink: 0, marginTop: '2px' }} />
+            <Info size={16} style={{ color: '#2CB7A5', flexShrink: 0, marginTop: '2px' }} />
             <p
               style={{
                 fontSize: 'var(--text-xs)',
@@ -273,10 +273,10 @@ export function ExplainabilityPanel({
                   fontWeight: 'var(--font-semibold)',
                   border: '1px solid',
                   borderColor:
-                    activeTab === 'credibility' ? 'var(--color-primary-500)' : 'var(--border-color)',
+                    activeTab === 'credibility' ? '#2CB7A5' : 'var(--border-color)',
                   background:
-                    activeTab === 'credibility' ? 'rgba(99, 102, 241, 0.15)' : 'var(--bg-elevated)',
-                  color: activeTab === 'credibility' ? 'var(--color-primary-300)' : 'var(--text-muted)',
+                    activeTab === 'credibility' ? '#17232C' : 'transparent',
+                  color: activeTab === 'credibility' ? '#F3F0E8' : 'var(--text-muted)',
                   cursor: 'pointer',
                   transition: 'all var(--transition-fast)',
                 }}
@@ -294,10 +294,10 @@ export function ExplainabilityPanel({
                   fontWeight: 'var(--font-semibold)',
                   border: '1px solid',
                   borderColor:
-                    activeTab === 'sentiment' ? 'var(--color-primary-500)' : 'var(--border-color)',
+                    activeTab === 'sentiment' ? '#2CB7A5' : 'var(--border-color)',
                   background:
-                    activeTab === 'sentiment' ? 'rgba(99, 102, 241, 0.15)' : 'var(--bg-elevated)',
-                  color: activeTab === 'sentiment' ? 'var(--color-primary-300)' : 'var(--text-muted)',
+                    activeTab === 'sentiment' ? '#17232C' : 'transparent',
+                  color: activeTab === 'sentiment' ? '#F3F0E8' : 'var(--text-muted)',
                   cursor: 'pointer',
                   transition: 'all var(--transition-fast)',
                 }}
@@ -327,8 +327,8 @@ export function ExplainabilityPanel({
                   borderRadius: 'var(--radius-sm)',
                   fontSize: 'var(--text-xs)',
                   border: '1px solid',
-                  borderColor: filter === 'all' ? 'var(--color-primary-400)' : 'var(--border-color)',
-                  background: filter === 'all' ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
+                  borderColor: filter === 'all' ? '#2CB7A5' : 'var(--border-color)',
+                  background: filter === 'all' ? '#17232C' : 'transparent',
                   color: filter === 'all' ? 'var(--text-primary)' : 'var(--text-muted)',
                   cursor: 'pointer',
                 }}
@@ -346,8 +346,8 @@ export function ExplainabilityPanel({
                   borderRadius: 'var(--radius-sm)',
                   fontSize: 'var(--text-xs)',
                   border: '1px solid',
-                  borderColor: filter === 'supporting' ? 'rgba(16, 185, 129, 0.5)' : 'var(--border-color)',
-                  background: filter === 'supporting' ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
+                  borderColor: filter === 'supporting' ? 'rgba(53, 185, 138, 0.5)' : 'var(--border-color)',
+                  background: filter === 'supporting' ? 'rgba(53, 185, 138, 0.12)' : 'transparent',
                   color: filter === 'supporting' ? 'var(--color-real)' : 'var(--text-muted)',
                   cursor: 'pointer',
                 }}
@@ -365,8 +365,8 @@ export function ExplainabilityPanel({
                   borderRadius: 'var(--radius-sm)',
                   fontSize: 'var(--text-xs)',
                   border: '1px solid',
-                  borderColor: filter === 'opposing' ? 'rgba(239, 68, 68, 0.5)' : 'var(--border-color)',
-                  background: filter === 'opposing' ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
+                  borderColor: filter === 'opposing' ? 'rgba(232, 93, 93, 0.5)' : 'var(--border-color)',
+                  background: filter === 'opposing' ? 'rgba(232, 93, 93, 0.12)' : 'transparent',
                   color: filter === 'opposing' ? 'var(--color-fake)' : 'var(--text-muted)',
                   cursor: 'pointer',
                 }}

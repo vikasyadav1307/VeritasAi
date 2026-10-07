@@ -365,11 +365,11 @@ export default function HistoryPage() {
                         alignItems: 'center',
                         gap: '4px',
                         padding: '2px 8px',
-                        borderRadius: 'var(--radius-full)',
+                        borderRadius: 'var(--radius-xs)',
                         fontSize: 'var(--text-xs)',
-                        color: 'var(--color-primary-400)',
-                        background: 'rgba(99, 102, 241, 0.12)',
-                        border: '1px solid rgba(99, 102, 241, 0.25)',
+                        color: '#2CB7A5',
+                        background: '#17232C',
+                        border: '1px solid #26343D',
                       }}>
                         <ImageIcon size={11} /> Image OCR
                       </span>
@@ -381,11 +381,11 @@ export default function HistoryPage() {
                         alignItems: 'center',
                         gap: '4px',
                         padding: '2px 8px',
-                        borderRadius: 'var(--radius-full)',
+                        borderRadius: 'var(--radius-xs)',
                         fontSize: 'var(--text-xs)',
-                        color: 'var(--color-primary-400)',
-                        background: 'rgba(99, 102, 241, 0.12)',
-                        border: '1px solid rgba(99, 102, 241, 0.25)',
+                        color: '#2CB7A5',
+                        background: '#17232C',
+                        border: '1px solid #26343D',
                       }}>
                         <ExternalLink size={11} /> URL
                       </span>

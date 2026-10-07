@@ -11,16 +11,36 @@ help: ## Show this help
 # ── Docker ──
 
 dev: ## Start all services in development mode
-	docker-compose up --build
+	docker compose up --build
 
-down: ## Stop all services
-	docker-compose down
+down: ## Stop development services
+	docker compose down
 
-build: ## Build all Docker images
-	docker-compose build
+build: ## Build development Docker images
+	docker compose build
 
-logs: ## Tail logs from all services
-	docker-compose logs -f
+logs: ## Tail development logs
+	docker compose logs -f
+
+# ── Production Docker ──
+
+prod-build: ## Build production Docker images
+	docker compose -f docker-compose.prod.yml build
+
+prod-up: ## Start all services in production mode
+	docker compose -f docker-compose.prod.yml up -d
+
+prod-down: ## Stop production services
+	docker compose -f docker-compose.prod.yml down
+
+prod-logs: ## Tail production logs
+	docker compose -f docker-compose.prod.yml logs -f
+
+prod-status: ## Check health and status of production containers
+	docker compose -f docker-compose.prod.yml ps
+
+prod-health: ## Verify production readiness endpoint
+	curl -f http://localhost/health/ready || echo "Readiness check failed"
 
 # ── Backend ──
 

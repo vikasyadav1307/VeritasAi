@@ -1,24 +1,26 @@
+import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
+import styles from './AppLayout.module.css';
 
 export function AppLayout() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
-    <div style={{ minHeight: '100vh' }}>
-      <Header />
-      <Sidebar />
-      <main
-        id="main-content"
-        style={{
-          marginLeft: 'var(--sidebar-width)',
-          marginTop: 'var(--header-height)',
-          padding: 'var(--space-8)',
-          maxWidth: 'var(--content-max-width)',
-          minHeight: 'calc(100vh - var(--header-height))',
-        }}
-      >
-        <Outlet />
-      </main>
+    <div className={styles.appShell}>
+      <Sidebar
+        isOpen={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+      />
+      <div className={styles.mainLayout}>
+        <Header
+          onToggleMobileMenu={() => setMobileMenuOpen((p) => !p)}
+        />
+        <main id="main-content" className={styles.mainContent}>
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }

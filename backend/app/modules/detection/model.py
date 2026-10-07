@@ -38,14 +38,19 @@ class FakeNewsModel:
         self,
         model_path: str | None = None,
     ) -> None:
-        # Project root: aiproject/
-        project_root = Path(__file__).resolve().parents[4]
+        from app.config import settings
 
-        self.model_path = (
-            Path(model_path)
-            if model_path
-            else project_root / "models" / "fake_news_model"
-        )
+        if model_path:
+            self.model_path = Path(model_path)
+        else:
+            # Check configured model_dir first, then parent search, then container default
+            candidates = [
+                Path(settings.model_dir) / "fake_news_model",
+                Path(__file__).resolve().parents[4] / "models" / "fake_news_model",
+                Path("/app/models/fake_news_model"),
+                Path("models/fake_news_model"),
+            ]
+            self.model_path = next((p for p in candidates if p.exists()), candidates[0])
 
         self._status: ModelStatus = ModelStatus.NOT_LOADED
         self._model: object | None = None

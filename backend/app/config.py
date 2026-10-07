@@ -63,6 +63,9 @@ class Settings(BaseSettings):
     # ── Rate Limiting ──
     rate_limit_enabled: bool = Field(default=False, description="Enable rate limiting")
 
+    # ── Documentation ──
+    enable_docs: bool = Field(default=True, description="Enable Swagger/ReDoc documentation endpoints")
+
     # ── Logging ──
     log_level: str = Field(default="DEBUG", description="Log level: DEBUG | INFO | WARNING | ERROR")
     log_format: str = Field(default="console", description="Log format: console | json")

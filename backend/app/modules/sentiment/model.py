@@ -51,22 +51,18 @@ class SentimentModel:
         self,
         model_path: str | None = None,
     ) -> None:
-        # Project root:
-        # aiproject/
-        # ├── backend/
-        # │   └── app/
-        # │       └── modules/
-        # │           └── sentiment/
-        # │               └── model.py
-        # └── models/
-        #     └── sentiment_model/
-        project_root = Path(__file__).resolve().parents[4]
+        from app.config import settings
 
-        self.model_path = (
-            Path(model_path)
-            if model_path
-            else project_root / "models" / "sentiment_model"
-        )
+        if model_path:
+            self.model_path = Path(model_path)
+        else:
+            candidates = [
+                Path(settings.model_dir) / "sentiment_model",
+                Path(__file__).resolve().parents[4] / "models" / "sentiment_model",
+                Path("/app/models/sentiment_model"),
+                Path("models/sentiment_model"),
+            ]
+            self.model_path = next((p for p in candidates if p.exists()), candidates[0])
 
         self._model: object | None = None
         self._tokenizer: object | None = None

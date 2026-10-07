@@ -8,6 +8,8 @@ import { useAuthStore } from '../store/auth.store';
 const LoginPage = lazy(() => import('../features/auth/pages/LoginPage'));
 const RegisterPage = lazy(() => import('../features/auth/pages/RegisterPage'));
 const AnalyzePage = lazy(() => import('../features/analyze/pages/AnalyzePage'));
+const InsightsPage = lazy(() => import('../features/insights/pages/InsightsPage'));
+const AdminPage = lazy(() => import('../features/admin/pages/AdminPage'));
 const HistoryPage = lazy(() => import('../features/history/pages/HistoryPage'));
 const DashboardPage = lazy(() => import('../features/dashboard/pages/DashboardPage'));
 
@@ -62,13 +64,20 @@ export function Router() {
       <Routes>
         {/* Public auth routes — redirect authenticated users to /analyze */}
         <Route
+          path="/login"
+          element={
+            <GuestRoute>
+              <LoginPage />
+            </GuestRoute>
+          }
+        />
+        <Route
           element={
             <GuestRoute>
               <AuthLayout />
             </GuestRoute>
           }
         >
-          <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
         </Route>
 
@@ -82,6 +91,11 @@ export function Router() {
         >
           <Route path="/" element={<Navigate to="/analyze" replace />} />
           <Route path="/analyze" element={<AnalyzePage />} />
+          <Route path="/insights" element={<InsightsPage />} />
+          <Route path="/insights/history" element={<InsightsPage />} />
+          <Route path="/admin" element={<AdminPage />} />
+
+          {/* Backward compatibility for existing routes */}
           <Route path="/history" element={<HistoryPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
         </Route>
@@ -92,3 +106,4 @@ export function Router() {
     </Suspense>
   );
 }
+

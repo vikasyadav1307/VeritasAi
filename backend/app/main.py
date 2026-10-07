@@ -15,6 +15,7 @@ from app.config import settings
 from app.infrastructure.cache.redis_client import close_redis_client
 from app.infrastructure.logging.setup import setup_logging
 from app.middleware.error_handler import ErrorHandlerMiddleware
+from app.middleware.rate_limit import RateLimitMiddleware
 from app.middleware.request_id import RequestIDMiddleware
 from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.routers.health import router as health_router
@@ -74,9 +75,9 @@ def create_app() -> FastAPI:
         title=settings.app_name,
         description="Multilingual Fake News Detection and Sentiment Analysis API",
         version=settings.app_version,
-        docs_url="/docs",
-        redoc_url="/redoc",
-        openapi_url="/openapi.json",
+        docs_url="/docs" if settings.enable_docs else None,
+        redoc_url="/redoc" if settings.enable_docs else None,
+        openapi_url="/openapi.json" if settings.enable_docs else None,
         lifespan=lifespan,
     )
 
@@ -87,15 +88,23 @@ def create_app() -> FastAPI:
     app.add_middleware(SecurityHeadersMiddleware)
     # 3. Error handler wraps everything below
     app.add_middleware(ErrorHandlerMiddleware)
-    # 4. CORS
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.cors_origins_list,
-        allow_credentials=True,
-        allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
-        allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
-        max_age=600,
-    )
+    # 4. Rate limiting (protects downstream route handlers and inference)
+    app.add_middleware(RateLimitMiddleware)
+    # 5. CORS
+    cors_origins = settings.cors_origins_list
+    cors_kwargs: dict = {
+        "allow_methods": ["GET", "POST", "PUT", "DELETE", "PATCH"],
+        "allow_headers": ["Authorization", "Content-Type", "X-Request-ID"],
+        "max_age": 600,
+    }
+    if "*" in cors_origins:
+        cors_kwargs["allow_origin_regex"] = ".*"
+        cors_kwargs["allow_credentials"] = True
+    else:
+        cors_kwargs["allow_origins"] = cors_origins
+        cors_kwargs["allow_credentials"] = True
+
+    app.add_middleware(CORSMiddleware, **cors_kwargs)
 
     # ── Routers ──
     app.include_router(health_router)

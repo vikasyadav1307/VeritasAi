@@ -10,7 +10,7 @@ See 05_API_SPECIFICATION.md §5.27–5.28.
 import time
 
 import structlog
-from fastapi import APIRouter
+from fastapi import APIRouter, Response, status
 from sqlalchemy import text
 
 from app.config import settings
@@ -44,8 +44,12 @@ async def health_check() -> HealthResponse:
     status_code=200,
     summary="Deep readiness check",
     description="Verifies database and Redis connectivity.",
+    responses={
+        200: {"description": "All backend dependencies healthy and ready to receive traffic"},
+        503: {"description": "One or more dependent services (PostgreSQL, Redis) unavailable"},
+    },
 )
-async def readiness_check() -> ReadinessResponse:
+async def readiness_check(response: Response) -> ReadinessResponse:
     """Deep readiness check — verifies all external dependencies."""
     checks: dict[str, HealthCheckDetail] = {}
     all_healthy = True
@@ -74,14 +78,11 @@ async def readiness_check() -> ReadinessResponse:
         checks["redis"] = HealthCheckDetail(status="down", error=str(exc))
         all_healthy = False
 
-    response = ReadinessResponse(
+    if not all_healthy:
+        response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+        logger.warning("Readiness check failed", checks=checks)
+
+    return ReadinessResponse(
         status="ready" if all_healthy else "not_ready",
         checks=checks,
     )
-
-    if not all_healthy:
-        # Return 503 for failing readiness (handled by returning the model;
-        # status code override via Response parameter if needed)
-        logger.warning("Readiness check failed", checks=checks)
-
-    return response

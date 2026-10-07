@@ -1,39 +1,65 @@
 /* ──────────────────────────────────────────────
-   VeritasAI — CSS Design Tokens
-   All design system values from 07_UI_UX_DESIGN.md
+   VeritasAI — Design Tokens
+   Editorial Intelligence Design System
+   Investigative newsroom, research platform, verification tool
    ────────────────────────────────────────────── */
 
 :root {
-  /* ── Primary Colors ── */
-  --color-primary-50: #EEF2FF;
-  --color-primary-100: #E0E7FF;
-  --color-primary-200: #C7D2FE;
-  --color-primary-400: #818CF8;
-  --color-primary-500: #6366F1;
-  --color-primary-600: #4F46E5;
-  --color-primary-700: #4338CA;
-  --color-primary-900: #312E81;
+  /* ── Core Editorial Color System ── */
+  --bg-primary: #0B1117;
+  --bg-secondary: #111A22;
+  --bg-surface: #111A22;
+  --bg-elevated: #17232C;
+  --bg-card: #111A22;
+  --bg-card-solid: #111A22;
+  --bg-card-hover: #17232C;
+  --bg-input: #0E161E;
 
-  /* ── Semantic Colors ── */
-  --color-real: #10B981;
-  --color-fake: #EF4444;
-  --color-uncertain: #F59E0B;
-  --color-positive: #10B981;
-  --color-negative: #EF4444;
-  --color-neutral: #6B7280;
+  /* ── Functional Accents & Semantic Roles ── */
+  --color-primary-50: #E6F8F5;
+  --color-primary-100: #C2F0EA;
+  --color-primary-200: #8CE1D5;
+  --color-primary-300: #55D2C1;
+  --color-primary-400: #2CB7A5;
+  --color-primary-500: #2CB7A5;
+  --color-primary-600: #229989;
+  --color-primary-700: #1B7A6E;
+  --color-primary-900: #114D45;
 
-  /* ── Dark Theme (Default) ── */
-  --bg-primary: #0F172A;
-  --bg-secondary: #1E293B;
-  --bg-card: #1E293B;
-  --bg-elevated: #334155;
-  --text-primary: #F8FAFC;
-  --text-secondary: #94A3B8;
-  --text-muted: #64748B;
-  --border-color: #334155;
+  /* Functional Verification Tokens */
+  --color-accent: #2CB7A5;
+  --color-real: #35B98A;
+  --color-fake: #E85D5D;
+  --color-warning: #F2A93B;
+  --color-uncertain: #F2A93B;
+  --color-positive: #35B98A;
+  --color-negative: #E85D5D;
+  --color-neutral: #9BA7AE;
 
-  /* ── Typography ── */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* Subtle status badges */
+  --color-real-bg: rgba(53, 185, 138, 0.12);
+  --color-fake-bg: rgba(232, 93, 93, 0.12);
+  --color-warning-bg: rgba(242, 169, 59, 0.12);
+  --color-accent-bg: rgba(44, 183, 165, 0.12);
+
+  /* ── Typography & Contrasts ── */
+  --text-primary: #F3F0E8;
+  --text-secondary: #9BA7AE;
+  --text-muted: #6F7C84;
+  --border-color: #26343D;
+  --border-card: #26343D;
+  --border-focus: #2CB7A5;
+
+  /* ── Editorial Solid Actions (No Blue/Purple Gradients) ── */
+  --gradient-primary: #2CB7A5;
+  --gradient-hero: #2CB7A5;
+  --gradient-cta: #2CB7A5;
+  --gradient-card-glow: none;
+  --gradient-real: #35B98A;
+  --gradient-fake: #E85D5D;
+
+  /* ── Typography Scale ── */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
   --text-xs: 0.75rem;
@@ -42,7 +68,8 @@
   --text-lg: 1.125rem;
   --text-xl: 1.25rem;
   --text-2xl: 1.5rem;
-  --text-3xl: 2rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
 
   --font-normal: 400;
   --font-medium: 500;
@@ -50,7 +77,7 @@
   --font-bold: 700;
 
   --leading-tight: 1.2;
-  --leading-snug: 1.3;
+  --leading-snug: 1.35;
   --leading-normal: 1.6;
 
   /* ── Spacing ── */
@@ -65,29 +92,35 @@
   --space-12: 3rem;
   --space-16: 4rem;
 
-  /* ── Border Radius ── */
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
+  /* ── Human-Designed Radii (Restrained) ── */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;     /* Buttons, Inputs */
+  --radius-lg: 12px;    /* Cards */
+  --radius-xl: 14px;    /* Large panels */
+  --radius-2xl: 14px;
   --radius-full: 9999px;
 
-  /* ── Shadows ── */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.3);
+  /* ── Structured Elevation & Shadows (No Neon Glow) ── */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 10px 24px -4px rgba(0, 0, 0, 0.45);
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.25);
+  --shadow-glow: none;
+  --shadow-glow-strong: none;
+  --shadow-glow-real: none;
+  --shadow-glow-fake: none;
 
   /* ── Transitions ── */
-  --transition-fast: 150ms ease;
+  --transition-fast: 140ms ease;
   --transition-base: 200ms ease;
   --transition-slow: 300ms ease;
 
   /* ── Layout ── */
-  --sidebar-width: 240px;
-  --sidebar-collapsed: 64px;
+  --sidebar-width: 250px;
+  --sidebar-collapsed: 72px;
   --header-height: 64px;
-  --content-max-width: 1200px;
+  --content-max-width: 1440px;
 
   /* ── Z-Index ── */
   --z-sidebar: 40;
@@ -96,15 +129,21 @@
   --z-toast: 200;
 }
 
-/* ── Light Theme Override ── */
+/* ── Light Theme Fallback ── */
 [data-theme='light'] {
-  --bg-primary: #FFFFFF;
-  --bg-secondary: #F8FAFC;
+  --bg-primary: #F7F9FA;
+  --bg-secondary: #FFFFFF;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #F0F3F5;
   --bg-card: #FFFFFF;
-  --bg-elevated: #F1F5F9;
-  --text-primary: #0F172A;
-  --text-secondary: #64748B;
-  --text-muted: #94A3B8;
-  --border-color: #E2E8F0;
-  --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.15);
+  --bg-card-solid: #FFFFFF;
+  --bg-card-hover: #F0F3F5;
+  --bg-input: #FFFFFF;
+  --text-primary: #111A22;
+  --text-secondary: #586874;
+  --text-muted: #8596A1;
+  --border-color: #DDE3E7;
+  --border-card: #DDE3E7;
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.05);
+  --shadow-glow: none;
 }

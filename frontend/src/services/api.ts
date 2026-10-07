@@ -1,7 +1,12 @@
 import axios from 'axios';
 import { useAuthStore, type AuthUser } from '../store/auth.store';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL !== undefined
+    ? import.meta.env.VITE_API_BASE_URL
+    : import.meta.env.PROD
+      ? ''
+      : 'http://127.0.0.1:8000';
 
 // ── Analysis API Types ──
 
@@ -484,3 +489,38 @@ export async function getDashboardSummary(userId?: string): Promise<DashboardSum
   const response = await api.get<DashboardSummary>(`/api/v1/dashboard/summary${qs}`);
   return response.data;
 }
+
+// ── System Health & Monitoring API ──
+
+export interface HealthCheckDetail {
+  status: 'up' | 'down';
+  latency_ms?: number;
+  error?: string;
+}
+
+export interface ReadinessResponse {
+  status: 'ready' | 'not_ready';
+  checks: Record<string, HealthCheckDetail>;
+}
+
+export interface HealthResponse {
+  status: string;
+  version: string;
+}
+
+/**
+ * Fetch shallow health status of the API server.
+ */
+export async function getHealthStatus(): Promise<HealthResponse> {
+  const response = await api.get<HealthResponse>('/health');
+  return response.data;
+}
+
+/**
+ * Fetch deep readiness status of database, redis, and dependencies.
+ */
+export async function getReadinessStatus(): Promise<ReadinessResponse> {
+  const response = await api.get<ReadinessResponse>('/health/ready');
+  return response.data;
+}
+

@@ -574,7 +574,7 @@ export default function AnalyzePage() {
                   style={{
                     padding: '4px 12px',
                     borderRadius: 'var(--radius-full)',
-                    background: 'rgba(255, 255, 255, 0.04)',
+                    background: 'var(--bg-elevated)',
                     border: '1px solid var(--border-color)',
                     color: 'var(--text-secondary)',
                     fontSize: '0.6875rem',
@@ -583,12 +583,12 @@ export default function AnalyzePage() {
                     transition: 'all var(--transition-fast)',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#17232C';
-                    e.currentTarget.style.borderColor = '#2CB7A5';
+                    e.currentTarget.style.background = 'var(--bg-surface)';
+                    e.currentTarget.style.borderColor = 'var(--color-accent)';
                     e.currentTarget.style.color = 'var(--text-primary)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
+                    e.currentTarget.style.background = 'var(--bg-elevated)';
                     e.currentTarget.style.borderColor = 'var(--border-color)';
                     e.currentTarget.style.color = 'var(--text-secondary)';
                   }}
@@ -729,11 +729,11 @@ export default function AnalyzePage() {
                 onClick={() => fileInputRef.current?.click()}
                 style={{
                   border: `1px dashed ${
-                    isDragging ? '#2CB7A5' : '#26343D'
+                    isDragging ? 'var(--color-accent)' : 'var(--border-color)'
                   }`,
                   background: isDragging
-                    ? '#17232C'
-                    : '#0E161E',
+                    ? 'var(--bg-elevated)'
+                    : 'var(--bg-input)',
                   borderRadius: 'var(--radius-md)',
                   padding: 'var(--space-10) var(--space-6)',
                   textAlign: 'center',
@@ -746,13 +746,13 @@ export default function AnalyzePage() {
                     width: '48px',
                     height: '48px',
                     borderRadius: 'var(--radius-md)',
-                    background: '#17232C',
-                    border: '1px solid #26343D',
+                    background: 'var(--bg-elevated)',
+                    border: '1px solid var(--border-color)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     margin: '0 auto var(--space-3)',
-                    color: '#2CB7A5',
+                    color: 'var(--color-accent)',
                   }}
                 >
                   <UploadCloud size={24} />
@@ -823,12 +823,12 @@ export default function AnalyzePage() {
                         width: '38px',
                         height: '38px',
                         borderRadius: 'var(--radius-md)',
-                        background: '#17232C',
-                        border: '1px solid #26343D',
+                        background: 'var(--bg-elevated)',
+                        border: '1px solid var(--border-color)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: '#2CB7A5',
+                        color: 'var(--color-accent)',
                         flexShrink: 0,
                       }}
                     >
@@ -1031,10 +1031,10 @@ export default function AnalyzePage() {
             position: 'fixed',
             bottom: '24px',
             right: '24px',
-            background: '#111A22',
-            border: '1px solid #26343D',
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--border-color)',
             borderRadius: 'var(--radius-md)',
-            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4)',
+            boxShadow: 'var(--shadow-lg)',
             padding: '12px 20px',
             color: 'var(--text-primary)',
             fontSize: 'var(--text-sm)',
@@ -1833,8 +1833,8 @@ export default function AnalyzePage() {
                 onClick={handleSaveToHistory}
                 style={{
                   ...actionBtnStyle,
-                  background: '#17232C',
-                  borderColor: '#26343D',
+                  background: 'var(--bg-elevated)',
+                  borderColor: 'var(--border-color)',
                   color: 'var(--text-primary)',
                 }}
               >
@@ -1887,7 +1887,7 @@ export default function AnalyzePage() {
                     height: '38px',
                     borderRadius: 'var(--radius-md)',
                     background: card.bg,
-                    border: '1px solid #26343D',
+                    border: '1px solid var(--border-color)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1935,10 +1935,11 @@ const featureBadgeStyle: React.CSSProperties = {
   alignItems: 'center',
   gap: '8px',
   padding: '6px 12px',
-  background: 'var(--bg-elevated)',
+  background: 'var(--bg-surface)',
   border: '1px solid var(--border-color)',
   borderRadius: 'var(--radius-sm)',
   minWidth: '120px',
+  boxShadow: 'var(--shadow-sm)',
 };
 
 const featureBadgeTitle: React.CSSProperties = {

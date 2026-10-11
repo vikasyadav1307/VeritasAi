@@ -121,8 +121,8 @@ export function TranslationPanel({
   return (
     <div
       style={{
-        background: '#111A22',
-        border: '1px solid #26343D',
+        background: 'var(--bg-surface)',
+        border: '1px solid var(--border-color)',
         borderRadius: '14px',
         overflow: 'hidden',
         marginBottom: 'var(--space-6)',
@@ -146,7 +146,7 @@ export function TranslationPanel({
           alignItems: 'center',
           justifyContent: 'space-between',
           cursor: 'pointer',
-          background: '#17232C',
+          background: 'var(--bg-elevated)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -154,9 +154,9 @@ export function TranslationPanel({
             style={{
               padding: '8px',
               borderRadius: '8px',
-              background: '#202E39',
-              color: '#2CB7A5',
-              border: '1px solid #26343D',
+              background: 'var(--bg-surface)',
+              color: 'var(--color-accent)',
+              border: '1px solid var(--border-color)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -165,17 +165,17 @@ export function TranslationPanel({
             <Languages size={18} />
           </div>
           <div>
-            <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: '#F3F0E8', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+            <h3 style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
               {title}
-              <span style={{ fontSize: '0.6875rem', fontWeight: 500, color: '#9BA7AE', border: '1px solid #26343D', padding: '2px 8px', borderRadius: '4px' }}>
+              <span style={{ fontSize: '0.6875rem', fontWeight: 500, color: 'var(--text-secondary)', border: '1px solid var(--border-color)', padding: '2px 8px', borderRadius: '4px' }}>
                 On-Demand
               </span>
             </h3>
-            <p style={{ fontSize: '0.75rem', color: '#6F7C84', margin: '2px 0 0 0' }}>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
               Detected:{' '}
-              <span style={{ fontWeight: 600, color: '#F3F0E8' }}>{displayLangName}</span>
+              <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{displayLangName}</span>
               {languageConfidence !== null && languageConfidence !== undefined && (
-                <span style={{ marginLeft: '6px', color: '#2CB7A5', fontFamily: 'var(--font-mono)', fontSize: '0.6875rem' }}>
+                <span style={{ marginLeft: '6px', color: 'var(--color-accent)', fontFamily: 'var(--font-mono)', fontSize: '0.6875rem' }}>
                   ({(languageConfidence * 100).toFixed(1)}% conf)
                 </span>
               )}
@@ -184,10 +184,10 @@ export function TranslationPanel({
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '0.75rem', color: '#9BA7AE' }}>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
             {isOpen ? 'Collapse panel' : 'Translate for presentation'}
           </span>
-          <div style={{ color: '#9BA7AE' }}>
+          <div style={{ color: 'var(--text-secondary)' }}>
             {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
           </div>
         </div>
@@ -195,28 +195,28 @@ export function TranslationPanel({
 
       {/* Expanded Content Area */}
       {isOpen && (
-        <div style={{ padding: '20px', borderTop: '1px solid #26343D', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ padding: '20px', borderTop: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {/* External Provider & Model Decoupling Notice */}
           <div
             style={{
               padding: '12px 14px',
               borderRadius: '8px',
-              background: '#17232C',
-              border: '1px solid #26343D',
+              background: 'var(--bg-elevated)',
+              border: '1px solid var(--border-color)',
               fontSize: '0.75rem',
-              color: '#9BA7AE',
+              color: 'var(--text-secondary)',
               display: 'flex',
               alignItems: 'flex-start',
               gap: '10px',
             }}
           >
-            <Info size={16} style={{ color: '#2CB7A5', flexShrink: 0, marginTop: '2px' }} />
+            <Info size={16} style={{ color: 'var(--color-accent)', flexShrink: 0, marginTop: '2px' }} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <p style={{ fontWeight: 600, color: '#F3F0E8', margin: 0 }}>
+              <p style={{ fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
                 Presentation Translation Disclaimer
               </p>
-              <p style={{ color: '#9BA7AE', margin: 0, lineHeight: 1.5 }}>
-                Translation is strictly optional and presentation-only (powered by external services). Model credibility, sentiment scoring, and token explainability are computed strictly on the <strong style={{ color: '#F3F0E8' }}>original text</strong> to guarantee zero semantic distortion.
+              <p style={{ color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                Translation is strictly optional and presentation-only (powered by external services). Model credibility, sentiment scoring, and token explainability are computed strictly on the <strong style={{ color: 'var(--text-primary)' }}>original text</strong> to guarantee zero semantic distortion.
               </p>
             </div>
           </div>
@@ -230,27 +230,27 @@ export function TranslationPanel({
               justifyContent: 'space-between',
               gap: '12px',
               padding: '12px',
-              background: '#0E161E',
+              background: 'var(--bg-surface)',
               borderRadius: '8px',
-              border: '1px solid #26343D',
+              border: '1px solid var(--border-color)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem' }}>
-              <span style={{ color: '#6F7C84' }}>Source:</span>
-              <span style={{ padding: '3px 8px', borderRadius: '4px', background: '#17232C', color: '#F3F0E8', fontFamily: 'var(--font-mono)', border: '1px solid #26343D' }}>
+              <span style={{ color: 'var(--text-muted)' }}>Source:</span>
+              <span style={{ padding: '3px 8px', borderRadius: '4px', background: 'var(--bg-elevated)', color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', border: '1px solid var(--border-color)' }}>
                 {displayLangName} ({detectedLanguage})
               </span>
-              <ArrowRight size={14} style={{ color: '#6F7C84' }} />
-              <span style={{ color: '#6F7C84' }}>Target:</span>
+              <ArrowRight size={14} style={{ color: 'var(--text-muted)' }} />
+              <span style={{ color: 'var(--text-muted)' }}>Target:</span>
               <select
                 aria-label="Target translation language"
                 value={targetLang}
                 onChange={(e) => setTargetLang(e.target.value)}
                 disabled={isLoadingLangs || isTranslating}
                 style={{
-                  background: '#17232C',
-                  color: '#F3F0E8',
-                  border: '1px solid #26343D',
+                  background: 'var(--bg-elevated)',
+                  color: 'var(--text-primary)',
+                  border: '1px solid var(--border-color)',
                   borderRadius: '6px',
                   padding: '4px 10px',
                   fontSize: '0.75rem',
@@ -271,9 +271,9 @@ export function TranslationPanel({
               style={{
                 padding: '6px 14px',
                 borderRadius: '8px',
-                background: '#2CB7A5',
-                color: '#0B1117',
-                border: '1px solid #2CB7A5',
+                background: 'var(--color-accent)',
+                color: '#FFFFFF',
+                border: '1px solid var(--color-accent)',
                 fontSize: '0.75rem',
                 fontWeight: 600,
                 display: 'flex',
@@ -306,7 +306,7 @@ export function TranslationPanel({
                 background: 'rgba(232, 93, 93, 0.12)',
                 border: '1px solid rgba(232, 93, 93, 0.28)',
                 fontSize: '0.75rem',
-                color: '#E85D5D',
+                color: 'var(--color-fake)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
@@ -324,8 +324,8 @@ export function TranslationPanel({
               style={{
                 padding: '16px',
                 borderRadius: '8px',
-                background: '#0E161E',
-                border: '1px solid #26343D',
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border-color)',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
@@ -333,26 +333,26 @@ export function TranslationPanel({
             >
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#F3F0E8', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <ShieldCheck size={14} style={{ color: '#35B98A' }} />
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <ShieldCheck size={14} style={{ color: 'var(--color-real)' }} />
                     Original Analyzed Text
                   </span>
-                  <span style={{ fontSize: '0.625rem', color: '#35B98A', fontFamily: 'var(--font-mono)', background: 'rgba(53, 185, 138, 0.12)', border: '1px solid rgba(53, 185, 138, 0.25)', padding: '2px 6px', borderRadius: '4px' }}>
+                  <span style={{ fontSize: '0.625rem', color: 'var(--color-real)', fontFamily: 'var(--font-mono)', background: 'var(--color-real-bg)', border: '1px solid var(--border-color)', padding: '2px 6px', borderRadius: '4px' }}>
                     Used for XLM-R Inference
                   </span>
                 </div>
-                <div style={{ padding: '12px', borderRadius: '6px', background: '#17232C', border: '1px solid #26343D', fontSize: '0.75rem', color: '#F3F0E8', whiteSpace: 'pre-wrap', maxHeight: '240px', overflowY: 'auto', lineHeight: 1.6 }}>
+                <div style={{ padding: '12px', borderRadius: '6px', background: 'var(--bg-elevated)', border: '1px solid var(--border-color)', fontSize: '0.75rem', color: 'var(--text-primary)', whiteSpace: 'pre-wrap', maxHeight: '240px', overflowY: 'auto', lineHeight: 1.6 }}>
                   {originalText || '(No text)'}
                 </div>
               </div>
 
-              <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.6875rem', color: '#6F7C84', paddingTop: '8px', borderTop: '1px solid #26343D' }}>
+              <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.6875rem', color: 'var(--text-muted)', paddingTop: '8px', borderTop: '1px solid var(--border-color)' }}>
                 <span>Length: {originalText.length} chars</span>
                 <button
                   onClick={() => copyToClipboard(originalText, true)}
-                  style={{ color: '#9BA7AE', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', background: 'none', border: 'none' }}
+                  style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', background: 'none', border: 'none' }}
                 >
-                  {copiedOriginal ? <Check size={13} style={{ color: '#35B98A' }} /> : <Copy size={13} />}
+                  {copiedOriginal ? <Check size={13} style={{ color: 'var(--color-real)' }} /> : <Copy size={13} />}
                   {copiedOriginal ? 'Copied' : 'Copy'}
                 </button>
               </div>
@@ -363,8 +363,8 @@ export function TranslationPanel({
               style={{
                 padding: '16px',
                 borderRadius: '8px',
-                background: '#0E161E',
-                border: '1px solid #26343D',
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border-color)',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
@@ -372,41 +372,41 @@ export function TranslationPanel({
             >
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#F3F0E8', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Globe size={14} style={{ color: '#2CB7A5' }} />
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Globe size={14} style={{ color: 'var(--color-accent)' }} />
                     Translated Presentation Text
                   </span>
-                  <span style={{ fontSize: '0.625rem', color: '#2CB7A5', fontFamily: 'var(--font-mono)', background: 'rgba(44, 183, 165, 0.12)', border: '1px solid rgba(44, 183, 165, 0.25)', padding: '2px 6px', borderRadius: '4px' }}>
+                  <span style={{ fontSize: '0.625rem', color: 'var(--color-accent)', fontFamily: 'var(--font-mono)', background: 'var(--color-accent-bg)', border: '1px solid var(--border-color)', padding: '2px 6px', borderRadius: '4px' }}>
                     {translationResult ? translationResult.target_lang_name : 'Pending'}
                   </span>
                 </div>
 
-                <div style={{ padding: '12px', borderRadius: '6px', background: '#17232C', border: '1px solid #26343D', fontSize: '0.75rem', color: '#F3F0E8', whiteSpace: 'pre-wrap', maxHeight: '240px', overflowY: 'auto', lineHeight: 1.6 }}>
+                <div style={{ padding: '12px', borderRadius: '6px', background: 'var(--bg-elevated)', border: '1px solid var(--border-color)', fontSize: '0.75rem', color: 'var(--text-primary)', whiteSpace: 'pre-wrap', maxHeight: '240px', overflowY: 'auto', lineHeight: 1.6 }}>
                   {isTranslating ? (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 0', color: '#9BA7AE', gap: '8px' }}>
-                      <Loader2 size={16} style={{ animation: 'spin 1s linear infinite', color: '#2CB7A5' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 0', color: 'var(--text-secondary)', gap: '8px' }}>
+                      <Loader2 size={16} style={{ animation: 'spin 1s linear infinite', color: 'var(--color-accent)' }} />
                       <span>Requesting presentation translation...</span>
                     </div>
                   ) : translationResult ? (
                     translationResult.translated_text
                   ) : (
-                    <span style={{ color: '#6F7C84', fontStyle: 'italic' }}>
+                    <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
                       Click &quot;Translate Text&quot; above to request translation for presentation.
                     </span>
                   )}
                 </div>
               </div>
 
-              <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.6875rem', color: '#6F7C84', paddingTop: '8px', borderTop: '1px solid #26343D' }}>
+              <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.6875rem', color: 'var(--text-muted)', paddingTop: '8px', borderTop: '1px solid var(--border-color)' }}>
                 <span>
                   {translationResult ? `Provider: ${translationResult.provider}` : 'On-demand only'}
                 </span>
                 {translationResult && (
                   <button
                     onClick={() => copyToClipboard(translationResult.translated_text, false)}
-                    style={{ color: '#9BA7AE', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', background: 'none', border: 'none' }}
+                    style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', background: 'none', border: 'none' }}
                   >
-                    {copiedTranslated ? <Check size={13} style={{ color: '#2CB7A5' }} /> : <Copy size={13} />}
+                    {copiedTranslated ? <Check size={13} style={{ color: 'var(--color-accent)' }} /> : <Copy size={13} />}
                     {copiedTranslated ? 'Copied' : 'Copy'}
                   </button>
                 )}

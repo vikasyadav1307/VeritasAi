@@ -7,12 +7,12 @@
   position: sticky;
   top: 0;
   left: 0;
-  background-color: #111A22;
-  border-right: 1px solid #26343D;
+  background-color: var(--bg-surface);
+  border-right: 1px solid var(--border-color);
   z-index: var(--z-sidebar);
   display: flex;
   flex-direction: column;
-  transition: transform var(--transition-base), width var(--transition-base);
+  transition: transform var(--transition-base), width var(--transition-base), background-color var(--transition-slow), border-color var(--transition-slow);
   overflow-y: auto;
   overflow-x: hidden;
   box-sizing: border-box;
@@ -23,7 +23,7 @@
   align-items: center;
   gap: var(--space-3);
   padding: 18px 20px;
-  border-bottom: 1px solid #26343D;
+  border-bottom: 1px solid var(--border-color);
   text-decoration: none;
   box-sizing: border-box;
 }
@@ -32,12 +32,12 @@
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: #17232C;
-  border: 1px solid #26343D;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #2CB7A5;
+  color: var(--color-accent);
   font-weight: 800;
   font-size: 0.9375rem;
   font-family: var(--font-mono, monospace);
@@ -53,7 +53,7 @@
 .brandName {
   font-size: 0.9375rem;
   font-weight: 700;
-  color: #F3F0E8;
+  color: var(--text-primary);
   line-height: 1.2;
   letter-spacing: -0.01em;
   white-space: nowrap;
@@ -61,7 +61,7 @@
 
 .tagline {
   font-size: 0.625rem;
-  color: #6F7C84;
+  color: var(--text-muted);
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -81,7 +81,7 @@
   padding: 12px 10px 4px;
   font-size: 0.625rem;
   font-weight: 700;
-  color: #6F7C84;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -92,7 +92,7 @@
   gap: 10px;
   padding: 8px 12px;
   border-radius: 8px;
-  color: #9BA7AE;
+  color: var(--text-secondary);
   font-size: 0.8125rem;
   font-weight: 500;
   transition: all var(--transition-fast);
@@ -103,25 +103,25 @@
 }
 
 .navItem:hover {
-  background-color: #17232C;
-  color: #F3F0E8;
+  background-color: var(--bg-elevated);
+  color: var(--text-primary);
 }
 
 .navItemActive {
-  background-color: #17232C;
-  color: #F3F0E8 !important;
+  background-color: var(--bg-elevated);
+  color: var(--color-accent) !important;
   font-weight: 600;
-  border-left: 3px solid #2CB7A5;
+  border-left: 3px solid var(--color-accent);
 }
 
 .navItemActive:hover {
-  background-color: #1D2C38;
-  color: #F3F0E8;
+  background-color: var(--bg-elevated);
+  color: var(--color-accent);
 }
 
 .bottomSection {
   padding: 12px;
-  border-top: 1px solid #26343D;
+  border-top: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -134,8 +134,8 @@
   gap: 10px;
   padding: 8px 10px;
   border-radius: 8px;
-  background: #17232C;
-  border: 1px solid #26343D;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
   margin-top: 4px;
   box-sizing: border-box;
 }
@@ -144,12 +144,12 @@
   width: 30px;
   height: 30px;
   border-radius: 6px;
-  background: #202E39;
-  border: 1px solid #26343D;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #2CB7A5;
+  color: var(--color-accent);
   font-weight: 700;
   font-size: 0.75rem;
   font-family: var(--font-mono, monospace);
@@ -164,7 +164,7 @@
 .userName {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #F3F0E8;
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -172,7 +172,7 @@
 
 .userRole {
   font-size: 0.625rem;
-  color: #6F7C84;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }

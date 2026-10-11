@@ -127,23 +127,77 @@
   --z-header: 50;
   --z-modal: 100;
   --z-toast: 200;
+  /* Subtle dot grid */
+  --grid-dot-color: rgba(38, 52, 61, 0.45);
+  --grid-dot-opacity: 0.6;
 }
 
-/* ── Light Theme Fallback ── */
+/* ── Light Theme (Editorial Intelligence) ── */
 [data-theme='light'] {
-  --bg-primary: #F7F9FA;
+  /* Main backgrounds & surfaces */
+  --bg-primary: #F5F7F8;
   --bg-secondary: #FFFFFF;
   --bg-surface: #FFFFFF;
-  --bg-elevated: #F0F3F5;
+  --bg-elevated: #EDF2F4;
   --bg-card: #FFFFFF;
   --bg-card-solid: #FFFFFF;
-  --bg-card-hover: #F0F3F5;
+  --bg-card-hover: #EDF2F4;
   --bg-input: #FFFFFF;
-  --text-primary: #111A22;
-  --text-secondary: #586874;
+
+  /* Typography & Contrasts */
+  --text-primary: #17212B;
+  --text-secondary: #52616B;
   --text-muted: #8596A1;
-  --border-color: #DDE3E7;
-  --border-card: #DDE3E7;
-  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.05);
+  --border-color: #DCE3E8;
+  --border-card: #DCE3E8;
+  --border-focus: #159E91;
+
+  /* Editorial Primary Teal Accent */
+  --color-primary-50: #E6F8F5;
+  --color-primary-100: #C2F0EA;
+  --color-primary-200: #8CE1D5;
+  --color-primary-300: #55D2C1;
+  --color-primary-400: #159E91;
+  --color-primary-500: #159E91;
+  --color-primary-600: #12877C;
+  --color-primary-700: #0E6C63;
+  --color-primary-900: #083D37;
+  --color-accent: #159E91;
+
+  /* Semantic Verification Tokens (Accessible AA 4.5:1 against light surfaces) */
+  --color-real: #1E8E68;
+  --color-fake: #D32F2F;
+  --color-warning: #B45309;
+  --color-uncertain: #B45309;
+  --color-positive: #1E8E68;
+  --color-negative: #D32F2F;
+  --color-neutral: #52616B;
+
+  /* Status Badge Backgrounds */
+  --color-real-bg: rgba(30, 142, 104, 0.1);
+  --color-fake-bg: rgba(211, 47, 47, 0.1);
+  --color-warning-bg: rgba(180, 83, 9, 0.1);
+  --color-accent-bg: rgba(21, 158, 145, 0.1);
+
+  /* Solid Actions & Gradients */
+  --gradient-primary: #159E91;
+  --gradient-hero: #159E91;
+  --gradient-cta: #159E91;
+  --gradient-card-glow: none;
+  --gradient-real: #1E8E68;
+  --gradient-fake: #D32F2F;
+
+  /* Elevation Shadows (Restrained, no neon) */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.07);
+  --shadow-lg: 0 10px 24px -4px rgba(0, 0, 0, 0.08);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.03);
   --shadow-glow: none;
+  --shadow-glow-strong: none;
+  --shadow-glow-real: none;
+  --shadow-glow-fake: none;
+
+  /* Subtle dot grid */
+  --grid-dot-color: rgba(160, 175, 185, 0.25);
+  --grid-dot-opacity: 0.22;
 }

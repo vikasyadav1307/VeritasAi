@@ -27,33 +27,33 @@ export function HeroGlobe() {
         }}
       >
         {/* Outer reticle circle */}
-        <circle cx="120" cy="120" r="105" fill="none" stroke="#26343D" strokeWidth="1" />
-        <circle cx="120" cy="120" r="80" fill="none" stroke="#17232C" strokeWidth="1" />
-        <circle cx="120" cy="120" r="50" fill="none" stroke="#26343D" strokeWidth="1" strokeDasharray="3 3" />
-        <circle cx="120" cy="120" r="20" fill="none" stroke="#2CB7A5" strokeWidth="1" strokeOpacity="0.4" />
+        <circle cx="120" cy="120" r="105" fill="none" stroke="var(--border-color)" strokeWidth="1" />
+        <circle cx="120" cy="120" r="80" fill="none" stroke="var(--border-color)" strokeWidth="1" strokeOpacity="0.7" />
+        <circle cx="120" cy="120" r="50" fill="none" stroke="var(--border-color)" strokeWidth="1" strokeDasharray="3 3" />
+        <circle cx="120" cy="120" r="20" fill="none" stroke="var(--color-accent)" strokeWidth="1" strokeOpacity="0.5" />
 
         {/* Crosshairs */}
-        <line x1="120" y1="10" x2="120" y2="230" stroke="#26343D" strokeWidth="1" />
-        <line x1="10" y1="120" x2="230" y2="120" stroke="#26343D" strokeWidth="1" />
+        <line x1="120" y1="10" x2="120" y2="230" stroke="var(--border-color)" strokeWidth="1" />
+        <line x1="10" y1="120" x2="230" y2="120" stroke="var(--border-color)" strokeWidth="1" />
 
         {/* Diagonal tick marks */}
-        <line x1="45" y1="45" x2="55" y2="55" stroke="#6F7C84" strokeWidth="1" />
-        <line x1="195" y1="45" x2="185" y2="55" stroke="#6F7C84" strokeWidth="1" />
-        <line x1="45" y1="195" x2="55" y2="185" stroke="#6F7C84" strokeWidth="1" />
-        <line x1="195" y1="195" x2="185" y2="185" stroke="#6F7C84" strokeWidth="1" />
+        <line x1="45" y1="45" x2="55" y2="55" stroke="var(--text-muted)" strokeWidth="1" strokeOpacity="0.8" />
+        <line x1="195" y1="45" x2="185" y2="55" stroke="var(--text-muted)" strokeWidth="1" strokeOpacity="0.8" />
+        <line x1="45" y1="195" x2="55" y2="185" stroke="var(--text-muted)" strokeWidth="1" strokeOpacity="0.8" />
+        <line x1="195" y1="195" x2="185" y2="185" stroke="var(--text-muted)" strokeWidth="1" strokeOpacity="0.8" />
 
         {/* Verified Data Coordinates */}
-        <circle cx="145" cy="85" r="3" fill="#2CB7A5" />
-        <circle cx="90" cy="150" r="2.5" fill="#35B98A" />
-        <circle cx="160" cy="160" r="2.5" fill="#6F7C84" />
+        <circle cx="145" cy="85" r="3" fill="var(--color-accent)" />
+        <circle cx="90" cy="150" r="2.5" fill="var(--color-real)" />
+        <circle cx="160" cy="160" r="2.5" fill="var(--text-muted)" />
 
         {/* Coordinate vector connector */}
-        <polyline points="90,150 120,120 145,85" fill="none" stroke="#2CB7A5" strokeWidth="1" strokeOpacity="0.5" strokeDasharray="2 2" />
+        <polyline points="90,150 120,120 145,85" fill="none" stroke="var(--color-accent)" strokeWidth="1" strokeOpacity="0.6" strokeDasharray="2 2" />
 
         {/* Telemetry Labels */}
-        <text x="125" y="24" fill="#6F7C84" fontSize="8" fontFamily="var(--font-mono)">LAT 00°N</text>
-        <text x="175" y="116" fill="#6F7C84" fontSize="8" fontFamily="var(--font-mono)">GRID A-4</text>
-        <text x="125" y="222" fill="#6F7C84" fontSize="8" fontFamily="var(--font-mono)">100% OPERATIONAL</text>
+        <text x="125" y="24" fill="var(--text-muted)" fontSize="8" fontFamily="var(--font-mono)">LAT 00°N</text>
+        <text x="175" y="116" fill="var(--text-muted)" fontSize="8" fontFamily="var(--font-mono)">GRID A-4</text>
+        <text x="125" y="222" fill="var(--text-muted)" fontSize="8" fontFamily="var(--font-mono)">100% OPERATIONAL</text>
       </svg>
 
       {/* Subtle Information Pill */}
@@ -63,15 +63,16 @@ export function HeroGlobe() {
           bottom: '12px',
           right: '8px',
           padding: '4px 10px',
-          background: '#111A22',
-          border: '1px solid #26343D',
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border-color)',
           borderRadius: '4px',
           display: 'flex',
           alignItems: 'center',
           gap: '6px',
           fontSize: '0.6875rem',
           fontWeight: 600,
-          color: '#9BA7AE',
+          color: 'var(--text-secondary)',
+          boxShadow: 'var(--shadow-card)',
           zIndex: 2,
         }}
       >
@@ -80,7 +81,7 @@ export function HeroGlobe() {
             width: '6px',
             height: '6px',
             borderRadius: '50%',
-            background: '#35B98A',
+            background: 'var(--color-real)',
           }}
         />
         <span>TELEMETRY ONLINE</span>

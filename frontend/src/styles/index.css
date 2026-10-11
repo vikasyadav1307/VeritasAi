@@ -55,11 +55,12 @@ body::before {
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: radial-gradient(rgba(38, 52, 61, 0.45) 1px, transparent 1px);
+  background-image: radial-gradient(var(--grid-dot-color, rgba(38, 52, 61, 0.45)) 1px, transparent 1px);
   background-size: 28px 28px;
   pointer-events: none;
   z-index: 0;
-  opacity: 0.6;
+  opacity: var(--grid-dot-opacity, 0.6);
+  transition: opacity var(--transition-slow);
 }
 
 /* ── Typography ── */
@@ -170,6 +171,11 @@ pre {
   color: #F3F0E8;
 }
 
+[data-theme='light'] ::selection {
+  background-color: #C2F0EA;
+  color: #17212B;
+}
+
 /* ── Reduced Motion ── */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -223,8 +229,8 @@ pre {
   background: var(--bg-surface);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  transition: border-color var(--transition-fast), background var(--transition-fast);
+  box-shadow: var(--shadow-card);
+  transition: border-color var(--transition-fast), background var(--transition-fast), box-shadow var(--transition-fast);
   min-width: 0;
   max-width: 100%;
   width: 100%;
@@ -234,6 +240,10 @@ pre {
 
 .glass-card:hover {
   border-color: #384C59;
+}
+
+[data-theme='light'] .glass-card:hover {
+  border-color: #C2CFD6;
 }
 
 .glass-card-interactive {
@@ -261,15 +271,31 @@ pre {
   transition: background var(--transition-fast), border-color var(--transition-fast);
 }
 
+[data-theme='light'] .btn-glow-primary,
+[data-theme='light'] .btn-primary {
+  color: #FFFFFF;
+}
+
 .btn-glow-primary:hover:not(:disabled),
 .btn-primary:hover:not(:disabled) {
   background: #259E8E;
   border-color: #259E8E;
 }
 
+[data-theme='light'] .btn-glow-primary:hover:not(:disabled),
+[data-theme='light'] .btn-primary:hover:not(:disabled) {
+  background: #12877C;
+  border-color: #12877C;
+}
+
 .btn-glow-primary:active:not(:disabled),
 .btn-primary:active:not(:disabled) {
   background: #1F8578;
+}
+
+[data-theme='light'] .btn-glow-primary:active:not(:disabled),
+[data-theme='light'] .btn-primary:active:not(:disabled) {
+  background: #0E6C63;
 }
 
 /* ── Status Pills & Badges (Clean, 4px pill/box) ── */

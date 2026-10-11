@@ -3,23 +3,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, var(--color-primary-900) 0%, #0F172A 50%, var(--color-primary-900) 100%);
+  background: var(--bg-primary);
   padding: var(--space-4);
 }
 
 .authCard {
   width: 100%;
   max-width: 420px;
-  background: rgba(30, 41, 59, 0.7);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(99, 102, 241, 0.2);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-xl);
   padding: var(--space-10);
-  box-shadow: var(--shadow-lg), var(--shadow-glow);
+  box-shadow: var(--shadow-card);
 }
 
 [data-theme='light'] .authCard {
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--bg-surface);
   border-color: var(--border-color);
 }
 

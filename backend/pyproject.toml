@@ -57,6 +57,7 @@ dev = [
     "pytest-cov>=5.0.0",
     "httpx>=0.27.0",
     "factory-boy>=3.3.0",
+    "aiosqlite>=0.20.0",
 
     # ── Linting & Formatting ──
     "ruff>=0.4.0",

@@ -193,6 +193,15 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface GoogleAuthRequest {
+  credential?: string;
+  code?: string;
+  redirect_uri?: string;
+  email?: string;
+  full_name?: string;
+  username?: string;
+}
+
 export interface AuthResponse {
   access_token: string;
   refresh_token: string;
@@ -320,6 +329,22 @@ export async function registerUser(data: RegisterRequest): Promise<AuthResponse>
  */
 export async function loginUser(data: LoginRequest): Promise<AuthResponse> {
   const response = await api.post<AuthResponse>('/api/v1/auth/login', data);
+  return response.data;
+}
+
+/**
+ * Authenticate with Google (OAuth credential or profile payload).
+ */
+export async function loginWithGoogle(data: GoogleAuthRequest): Promise<AuthResponse> {
+  const response = await api.post<AuthResponse>('/api/v1/auth/google', data);
+  return response.data;
+}
+
+/**
+ * Fetch Google OAuth client configuration from server.
+ */
+export async function getGoogleAuthConfig(): Promise<{ client_id: string | null }> {
+  const response = await api.get<{ client_id: string | null }>('/api/v1/auth/google/config');
   return response.data;
 }
 

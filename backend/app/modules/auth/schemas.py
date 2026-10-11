@@ -74,6 +74,37 @@ class RefreshRequest(BaseModel):
     )
 
 
+class GoogleAuthRequest(BaseModel):
+    """Google OAuth authentication request body."""
+
+    credential: str | None = Field(
+        default=None,
+        description="Google ID Token from Google Identity Services",
+    )
+    code: str | None = Field(
+        default=None,
+        description="Google OAuth 2.0 authorization code",
+    )
+    redirect_uri: str | None = Field(
+        default=None,
+        description="Redirect URI used for authorization code exchange",
+    )
+    email: EmailStr | None = Field(
+        default=None,
+        description="User email (used in development or direct payload)",
+    )
+    full_name: str | None = Field(
+        default=None,
+        max_length=255,
+        description="User display name",
+    )
+    username: str | None = Field(
+        default=None,
+        max_length=50,
+        description="Optional preferred username",
+    )
+
+
 # ── Response Schemas ──
 
 

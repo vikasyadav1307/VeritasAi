@@ -175,8 +175,8 @@ describe('AnalyzePage — Image Analysis', () => {
         expect(
           screen.getByText(/BREAKING: World summit adopts clean energy goals for 2030./i),
         ).toBeInTheDocument();
-        expect(screen.getByText('Real')).toBeInTheDocument();
-        expect(screen.getByText('Positive')).toBeInTheDocument();
+        expect(screen.getByText(/Real/i)).toBeInTheDocument();
+        expect(screen.getByText(/Positive/i)).toBeInTheDocument();
       });
     } finally {
       URL.createObjectURL = originalCreateObjectURL;

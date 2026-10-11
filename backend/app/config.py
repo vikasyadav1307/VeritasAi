@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(".env", "../.env"),
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
@@ -62,6 +62,10 @@ class Settings(BaseSettings):
 
     # ── Rate Limiting ──
     rate_limit_enabled: bool = Field(default=False, description="Enable rate limiting")
+
+    # ── Google OAuth ──
+    google_client_id: str | None = Field(default=None, description="Google OAuth 2.0 Client ID")
+    google_client_secret: str | None = Field(default=None, description="Google OAuth 2.0 Client Secret")
 
     # ── Documentation ──
     enable_docs: bool = Field(default=True, description="Enable Swagger/ReDoc documentation endpoints")

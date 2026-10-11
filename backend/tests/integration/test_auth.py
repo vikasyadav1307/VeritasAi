@@ -597,3 +597,46 @@ async def test_user_a_cannot_manipulate_user_id_to_access_user_b_data(
     dash_data = response.json()
     # Must STILL return User A's data (1 analysis), NOT User B's (5 analyses)
     assert dash_data["total_analyses"] == 1
+
+
+# ── 15. Google Auth Integration ──
+
+
+@pytest.mark.asyncio
+async def test_google_auth_create_and_login(client: AsyncClient) -> None:
+    """POST /api/v1/auth/google should register and authenticate a new user."""
+    response = await client.post(
+        "/api/v1/auth/google",
+        json={
+            "email": "google_user@example.com",
+            "full_name": "Google Test User",
+            "username": "googletest",
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert "access_token" in data
+    assert "refresh_token" in data
+    assert data["user"]["email"] == "google_user@example.com"
+    assert data["user"]["full_name"] == "Google Test User"
+
+    # Second login with same email logs in existing user
+    login_resp = await client.post(
+        "/api/v1/auth/google",
+        json={
+            "email": "google_user@example.com",
+            "full_name": "Google Test User",
+        },
+    )
+    assert login_resp.status_code == 200
+    login_data = login_resp.json()
+    assert login_data["user"]["id"] == data["user"]["id"]
+
+
+@pytest.mark.asyncio
+async def test_google_auth_config(client: AsyncClient) -> None:
+    """GET /api/v1/auth/google/config returns client_id key."""
+    response = await client.get("/api/v1/auth/google/config")
+    assert response.status_code == 200
+    assert "client_id" in response.json()
+

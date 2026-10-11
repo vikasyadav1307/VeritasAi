@@ -149,11 +149,11 @@ export function Sidebar({ isOpen, onClose, adminSubNav, onSelectAdminTab }: Side
 
           <div className={styles.userCard}>
             <div className={styles.userAvatar}>
-              {(user?.username?.[0] || 'V').toUpperCase()}
+              {(user?.username?.[0] || 'A').toUpperCase()}
             </div>
             <div className={styles.userInfo}>
               <div className={styles.userName}>
-                {user?.username || 'vikasyadav'}
+                {user?.username || 'analyst'}
               </div>
               <div className={styles.userRole}>
                 {isAdminRoute ? 'Admin' : 'Free Plan'}

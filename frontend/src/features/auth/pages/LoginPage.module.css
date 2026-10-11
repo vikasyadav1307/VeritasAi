@@ -89,6 +89,47 @@
   font-weight: 600;
 }
 
+/* Top Navigation Actions */
+.topNavActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topSignUpBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(44, 183, 165, 0.12);
+  color: #2CB7A5;
+  border: 1px solid rgba(44, 183, 165, 0.4);
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.topSignUpBtn:hover {
+  background: #2CB7A5;
+  color: #0B1117;
+  border-color: #2CB7A5;
+  transform: translateY(-1px);
+}
+
+[data-theme='light'] .topSignUpBtn {
+  background: rgba(44, 183, 165, 0.1);
+  color: #1A8A7C;
+  border-color: rgba(44, 183, 165, 0.35);
+}
+
+[data-theme='light'] .topSignUpBtn:hover {
+  background: #2CB7A5;
+  color: #FFFFFF;
+}
+
 /* Theme Toggle Button */
 .themeToggle {
   display: flex;
@@ -543,6 +584,305 @@
 
 .registerLink:hover {
   text-decoration: underline;
+}
+
+.signUpSecondaryBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 16px;
+  background: rgba(44, 183, 165, 0.08);
+  border: 1px dashed rgba(44, 183, 165, 0.4);
+  border-radius: 8px;
+  color: #2CB7A5;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.signUpSecondaryBtn:hover {
+  background: rgba(44, 183, 165, 0.16);
+  border-color: #2CB7A5;
+  color: #2CB7A5;
+}
+
+[data-theme='light'] .signUpSecondaryBtn {
+  background: rgba(44, 183, 165, 0.07);
+  border-color: rgba(44, 183, 165, 0.35);
+  color: #1A8A7C;
+}
+
+[data-theme='light'] .signUpSecondaryBtn:hover {
+  background: rgba(44, 183, 165, 0.15);
+  color: #1A8A7C;
+}
+
+/* ── Google SSO Modal ── */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 11, 16, 0.75);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  animation: fadeIn 0.18s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.googleModal {
+  width: 100%;
+  max-width: 440px;
+  background: #111A22;
+  border: 1px solid #26343D;
+  border-radius: 16px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6);
+  padding: 28px;
+  box-sizing: border-box;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+[data-theme='light'] .googleModal {
+  background: #FFFFFF;
+  border-color: #E2E8F0;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.12);
+}
+
+.googleModalHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  position: relative;
+}
+
+.modalCloseBtn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: transparent;
+  border: none;
+  color: #6F7C84;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.modalCloseBtn:hover {
+  color: #F3F0E8;
+  background: #17232C;
+}
+
+[data-theme='light'] .modalCloseBtn:hover {
+  color: #111A22;
+  background: #EDF2F7;
+}
+
+.googleLogoBadge {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  margin-bottom: 4px;
+}
+
+.googleModalTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #F3F0E8;
+  margin: 0;
+}
+
+[data-theme='light'] .googleModalTitle {
+  color: #111A22;
+}
+
+.googleModalSubtitle {
+  font-size: 0.8125rem;
+  color: #8C9BA5;
+  margin: 0;
+}
+
+.googleAccountList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.googleAccountCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: #17232C;
+  border: 1px solid #26343D;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+[data-theme='light'] .googleAccountCard {
+  background: #F8FAFC;
+  border-color: #E2E8F0;
+}
+
+.googleAccountCard:hover {
+  border-color: #2CB7A5;
+  background: #1D2C38;
+}
+
+[data-theme='light'] .googleAccountCard:hover {
+  border-color: #2CB7A5;
+  background: #F1F5F9;
+}
+
+.googleAccountUser {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.googleAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4285F4, #34A853);
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.googleAccountDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.googleAccountName {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #F3F0E8;
+}
+
+[data-theme='light'] .googleAccountName {
+  color: #111A22;
+}
+
+.googleAccountEmail {
+  font-size: 0.75rem;
+  color: #8C9BA5;
+}
+
+.googleDivider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 4px 0;
+}
+
+.googleDivider::before,
+.googleDivider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #26343D;
+}
+
+[data-theme='light'] .googleDivider::before,
+[data-theme='light'] .googleDivider::after {
+  border-bottom-color: #E2E8F0;
+}
+
+.googleDividerText {
+  padding: 0 10px;
+  font-size: 0.6875rem;
+  color: #6F7C84;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.customGoogleForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.customGoogleInput {
+  width: 100%;
+  padding: 10px 14px;
+  background: #0E161E;
+  border: 1px solid #26343D;
+  border-radius: 8px;
+  color: #F3F0E8;
+  font-size: 0.875rem;
+  outline: none;
+  box-sizing: border-box;
+}
+
+[data-theme='light'] .customGoogleInput {
+  background: #F8FAFC;
+  border-color: #CBD5E1;
+  color: #111A22;
+}
+
+.customGoogleInput:focus {
+  border-color: #2CB7A5;
+}
+
+.googleActionBtn {
+  width: 100%;
+  padding: 11px 18px;
+  background: #2CB7A5;
+  color: #0B1117;
+  border: 1px solid #2CB7A5;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.googleActionBtn:hover:not(:disabled) {
+  background: #259E8E;
+  border-color: #259E8E;
+}
+
+.googleActionBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* ── Footer ── */

@@ -1,7 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AppLayout } from '../components/layout/AppLayout';
-import { AuthLayout } from '../components/layout/AuthLayout';
 import { useAuthStore } from '../store/auth.store';
 
 // Lazy-loaded pages for code splitting
@@ -72,14 +71,13 @@ export function Router() {
           }
         />
         <Route
+          path="/register"
           element={
             <GuestRoute>
-              <AuthLayout />
+              <RegisterPage />
             </GuestRoute>
           }
-        >
-          <Route path="/register" element={<RegisterPage />} />
-        </Route>
+        />
 
         {/* Protected app routes — accessible only to authenticated users */}
         <Route

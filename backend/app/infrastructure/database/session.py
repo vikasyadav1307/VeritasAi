@@ -7,6 +7,8 @@ See 04_DATABASE_DESIGN.md §12 for connection pooling configuration.
 
 from collections.abc import AsyncGenerator
 
+from typing import Any
+
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -14,6 +16,23 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from app.config import settings
+
+
+def get_engine_connect_args(database_url: str) -> dict[str, Any]:
+    """Configure connection arguments for asyncpg based on database provider."""
+    args: dict[str, Any] = {}
+    url_lower = database_url.lower()
+
+    # Supabase & managed cloud PostgreSQL SSL configuration
+    if "supabase.co" in url_lower or "supabase.com" in url_lower:
+        if "ssl" not in url_lower:
+            args["ssl"] = "require"
+        # Supabase transaction pooler (port 6543) requires disabling statement cache
+        if ":6543" in database_url or "pooler.supabase.com" in url_lower:
+            args["statement_cache_size"] = 0
+
+    return args
+
 
 # Async engine — single instance per process
 engine = create_async_engine(
@@ -23,6 +42,7 @@ engine = create_async_engine(
     max_overflow=10 if settings.is_development else 40,
     pool_pre_ping=True,
     pool_recycle=300,
+    connect_args=get_engine_connect_args(settings.database_url),
 )
 
 # Session factory — creates new sessions for each request

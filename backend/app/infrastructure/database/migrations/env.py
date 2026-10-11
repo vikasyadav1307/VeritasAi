@@ -64,6 +64,9 @@ def do_run_migrations(connection: Connection) -> None:
         context.run_migrations()
 
 
+from app.infrastructure.database.session import get_engine_connect_args
+
+
 async def run_async_migrations() -> None:
     """In this scenario we need to create an Engine
     and associate a connection with the context.
@@ -74,6 +77,7 @@ async def run_async_migrations() -> None:
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args=get_engine_connect_args(settings.database_url),
     )
 
     async with connectable.connect() as connection:

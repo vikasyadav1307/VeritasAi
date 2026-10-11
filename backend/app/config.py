@@ -1,6 +1,6 @@
 """Application configuration loaded from environment variables."""
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -36,6 +36,19 @@ class Settings(BaseSettings):
         description="Async PostgreSQL connection string",
     )
     database_echo: bool = Field(default=False, description="Echo SQL queries to logs")
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def assemble_database_url(cls, v: str) -> str:
+        """Ensure database URL uses the asyncpg driver prefix for async SQLAlchemy."""
+        if isinstance(v, str):
+            v = v.strip()
+            # If scheme is postgres:// or postgresql:// without +asyncpg, upgrade to postgresql+asyncpg://
+            if v.startswith("postgres://"):
+                v = "postgresql+asyncpg://" + v[len("postgres://"):]
+            elif v.startswith("postgresql://") and not v.startswith("postgresql+"):
+                v = "postgresql+asyncpg://" + v[len("postgresql://"):]
+        return v
 
     # ── Redis ──
     redis_url: str = Field(default="redis://localhost:6379/0", description="Redis connection string")

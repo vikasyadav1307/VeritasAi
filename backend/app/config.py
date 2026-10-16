@@ -69,6 +69,7 @@ class Settings(BaseSettings):
     model_dir: str = Field(default="./models", description="Directory containing model weights")
     model_device: str = Field(default="cpu", description="Inference device: cpu | cuda")
     model_lazy_load: bool = Field(default=True, description="Lazy-load models on first request")
+    model_max_concurrency: int = Field(default=4, description="Maximum concurrent model inference tasks")
 
     # ── OCR ──
     tesseract_cmd: str = Field(default="/usr/bin/tesseract", description="Path to Tesseract binary")

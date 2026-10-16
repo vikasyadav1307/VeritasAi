@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import Boolean, Float, ForeignKey, String, Text
+from sqlalchemy import Boolean, Float, ForeignKey, Index, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -24,6 +24,14 @@ class AnalysisResult(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin)
     """Stores a single completed analysis record."""
 
     __tablename__ = "analysis_results"
+
+    __table_args__ = (
+        Index(
+            "ix_analysis_results_user_active_created",
+            "user_id",
+            "created_at",
+        ),
+    )
 
     # User association (nullable for anonymous / pre-auth analyses)
     user_id: Mapped[uuid.UUID | None] = mapped_column(

@@ -390,11 +390,16 @@ export async function logoutUser(): Promise<void> {
 export async function analyzeText(
   text: string,
   language: string = 'auto',
+  signal?: AbortSignal,
 ): Promise<AnalyzeResponse> {
-  const response = await api.post<AnalyzeResponse>('/api/v1/analyze/text', {
-    text,
-    language,
-  } satisfies AnalyzeRequest);
+  const response = await api.post<AnalyzeResponse>(
+    '/api/v1/analyze/text',
+    {
+      text,
+      language,
+    } satisfies AnalyzeRequest,
+    { signal },
+  );
 
   return response.data;
 }
@@ -403,11 +408,19 @@ export async function analyzeText(
  * Send an article URL to the backend for SSRF-safe scraping and analysis.
  *
  * @param url - Public HTTP or HTTPS article URL.
+ * @param signal - Optional AbortSignal for request cancellation.
  */
-export async function analyzeUrl(url: string): Promise<AnalyzeUrlResponse> {
-  const response = await api.post<AnalyzeUrlResponse>('/api/v1/analyze/url', {
-    url,
-  } satisfies AnalyzeUrlRequest);
+export async function analyzeUrl(
+  url: string,
+  signal?: AbortSignal,
+): Promise<AnalyzeUrlResponse> {
+  const response = await api.post<AnalyzeUrlResponse>(
+    '/api/v1/analyze/url',
+    {
+      url,
+    } satisfies AnalyzeUrlRequest,
+    { signal },
+  );
 
   return response.data;
 }
@@ -416,8 +429,12 @@ export async function analyzeUrl(url: string): Promise<AnalyzeUrlResponse> {
  * Send an image file to the backend for OCR text extraction and analysis.
  *
  * @param file - Image file (JPEG, PNG, or WEBP, max 10MB).
+ * @param signal - Optional AbortSignal for request cancellation.
  */
-export async function analyzeImage(file: File): Promise<AnalyzeImageResponse> {
+export async function analyzeImage(
+  file: File,
+  signal?: AbortSignal,
+): Promise<AnalyzeImageResponse> {
   const formData = new FormData();
   formData.append('file', file);
 
@@ -425,6 +442,7 @@ export async function analyzeImage(file: File): Promise<AnalyzeImageResponse> {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
+    signal,
   });
 
   return response.data;

@@ -101,12 +101,27 @@ async def get_dashboard_summary(
         AnalysisResult.user_id == current_user.id,
     ]
 
-    # 1. Total count, average confidence, and average processing time
+    # 1. Consolidated single-pass aggregate query for metrics, credibility, and sentiment
     agg_query = (
         select(
             func.count(AnalysisResult.id).label("total"),
             func.coalesce(func.avg(AnalysisResult.confidence), 0.0).label("avg_confidence"),
             func.coalesce(func.avg(AnalysisResult.processing_time_ms), 0.0).label("avg_processing_time"),
+            func.count(AnalysisResult.id)
+            .filter(func.lower(AnalysisResult.credibility_label) == "real")
+            .label("real_count"),
+            func.count(AnalysisResult.id)
+            .filter(func.lower(AnalysisResult.credibility_label) == "fake")
+            .label("fake_count"),
+            func.count(AnalysisResult.id)
+            .filter(func.lower(AnalysisResult.sentiment_label) == "positive")
+            .label("pos_count"),
+            func.count(AnalysisResult.id)
+            .filter(func.lower(AnalysisResult.sentiment_label) == "negative")
+            .label("neg_count"),
+            func.count(AnalysisResult.id)
+            .filter(func.lower(AnalysisResult.sentiment_label) == "neutral")
+            .label("neu_count"),
         )
         .where(*base_filter)
     )
@@ -118,20 +133,8 @@ async def get_dashboard_summary(
     avg_confidence: float = round(float(agg_row.avg_confidence or 0.0) * 100.0, 1)
     avg_processing_time_ms: float = round(float(agg_row.avg_processing_time or 0.0), 1)
 
-    # 2. Credibility breakdown
-    cred_query = (
-        select(
-            AnalysisResult.credibility_label,
-            func.count(AnalysisResult.id).label("cnt"),
-        )
-        .where(*base_filter)
-        .group_by(AnalysisResult.credibility_label)
-    )
-    cred_res = await db.execute(cred_query)
-    cred_counts = {row.credibility_label.capitalize(): row.cnt for row in cred_res.all()}
-
-    real_count = cred_counts.get("Real", 0)
-    fake_count = cred_counts.get("Fake", 0)
+    real_count = int(agg_row.real_count or 0)
+    fake_count = int(agg_row.fake_count or 0)
     real_pct = round((real_count / total * 100.0), 1) if total > 0 else 0.0
     fake_pct = round((fake_count / total * 100.0), 1) if total > 0 else 0.0
 
@@ -142,21 +145,9 @@ async def get_dashboard_summary(
         fake_percentage=fake_pct,
     )
 
-    # 3. Sentiment breakdown
-    sent_query = (
-        select(
-            AnalysisResult.sentiment_label,
-            func.count(AnalysisResult.id).label("cnt"),
-        )
-        .where(*base_filter)
-        .group_by(AnalysisResult.sentiment_label)
-    )
-    sent_res = await db.execute(sent_query)
-    sent_counts = {row.sentiment_label.capitalize(): row.cnt for row in sent_res.all()}
-
-    pos_count = sent_counts.get("Positive", 0)
-    neg_count = sent_counts.get("Negative", 0)
-    neu_count = sent_counts.get("Neutral", 0)
+    pos_count = int(agg_row.pos_count or 0)
+    neg_count = int(agg_row.neg_count or 0)
+    neu_count = int(agg_row.neu_count or 0)
 
     pos_pct = round((pos_count / total * 100.0), 1) if total > 0 else 0.0
     neg_pct = round((neg_count / total * 100.0), 1) if total > 0 else 0.0

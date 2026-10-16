@@ -196,18 +196,27 @@ export default function AnalyzePage() {
     }
   }, []);
 
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   const handleAnalyze = useCallback(async () => {
     if (!canSubmit) return;
+
+    // Cancel any previous in-flight request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     setIsLoading(true);
     setErrorMessage(null);
 
     try {
       if (activeTab === 'text') {
-        const response = await analyzeText(text);
+        const response = await analyzeText(text, 'auto', controller.signal);
         setResult(response);
       } else if (activeTab === 'url') {
-        const response = await analyzeUrl(trimmedUrl);
+        const response = await analyzeUrl(trimmedUrl, controller.signal);
         setResult(response);
       } else if (activeTab === 'image' && imageFile) {
         const response = await analyzeImage(imageFile);
@@ -215,13 +224,21 @@ export default function AnalyzePage() {
       }
       setResultTab('explanation');
     } catch (err: unknown) {
+      if (axios.isCancel(err)) {
+        return; // Request was aborted due to newer submission or user cancel
+      }
       setErrorMessage(getErrorMessage(err));
     } finally {
-      setIsLoading(false);
+      if (abortControllerRef.current === controller) {
+        setIsLoading(false);
+      }
     }
   }, [activeTab, text, trimmedUrl, imageFile, canSubmit]);
 
   const handleClear = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
     setText('');
     setUrl('');
     handleRemoveImage();
@@ -230,6 +247,9 @@ export default function AnalyzePage() {
   }, [handleRemoveImage]);
 
   const handleTabChange = useCallback((tabId: TabId) => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
     setActiveTab(tabId);
     setErrorMessage(null);
   }, []);

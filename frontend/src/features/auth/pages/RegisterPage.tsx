@@ -109,8 +109,13 @@ export default function RegisterPage() {
                   });
                   setAuth(authRes.user, authRes.access_token, authRes.refresh_token);
                   navigate('/analyze', { replace: true });
-                } catch {
-                  setServerError('Google registration failed. Please check your credentials.');
+                } catch (err: unknown) {
+                  const axiosErr = err as { response?: { data?: { detail?: string } }; message?: string };
+                  const errorMsg =
+                    axiosErr?.response?.data?.detail ||
+                    axiosErr?.message ||
+                    'Google registration failed. Please check your credentials.';
+                  setServerError(errorMsg);
                 } finally {
                   setGoogleLoading(false);
                 }
@@ -138,8 +143,13 @@ export default function RegisterPage() {
                   const authRes = await loginWithGoogle({ credential: res.credential });
                   setAuth(authRes.user, authRes.access_token, authRes.refresh_token);
                   navigate('/analyze', { replace: true });
-                } catch {
-                  setServerError('Google token validation failed.');
+                } catch (err: unknown) {
+                  const axiosErr = err as { response?: { data?: { detail?: string } }; message?: string };
+                  const errorMsg =
+                    axiosErr?.response?.data?.detail ||
+                    axiosErr?.message ||
+                    'Google token validation failed.';
+                  setServerError(errorMsg);
                 } finally {
                   setGoogleLoading(false);
                 }
@@ -248,8 +258,13 @@ export default function RegisterPage() {
       setAuth(response.user, response.access_token, response.refresh_token);
       setIsGoogleModalOpen(false);
       navigate('/analyze', { replace: true });
-    } catch {
-      setServerError('Google sign-up failed. Please try again.');
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { detail?: string } }; message?: string };
+      const errorMsg =
+        axiosErr?.response?.data?.detail ||
+        axiosErr?.message ||
+        'Google sign-up failed. Please try again.';
+      setServerError(errorMsg);
     } finally {
       setGoogleLoading(false);
     }

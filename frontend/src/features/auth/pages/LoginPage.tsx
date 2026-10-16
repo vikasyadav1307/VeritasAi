@@ -25,7 +25,12 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../../../store/auth.store';
 import { useThemeStore } from '../../../store/theme.store';
-import { loginUser, loginWithGoogle, getGoogleAuthConfig } from '../../../services/api';
+import {
+  loginUser,
+  loginWithGoogle,
+  getGoogleAuthConfig,
+  type LoginRequest,
+} from '../../../services/api';
 import styles from './LoginPage.module.css';
 
 const loginSchema = z.object({
@@ -55,6 +60,10 @@ export default function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
   });
 
   const enteredEmail = watch('email');
@@ -81,7 +90,11 @@ export default function LoginPage() {
     setServerError(null);
     setSocialNotice(null);
     try {
-      const response = await loginUser(data);
+      const payload: LoginRequest = {
+        email: data.email ?? '',
+        password: data.password ?? '',
+      };
+      const response = await loginUser(payload);
       setAuth(response.user, response.access_token, response.refresh_token);
       navigate('/analyze', { replace: true });
     } catch (error: unknown) {
@@ -183,15 +196,29 @@ export default function LoginPage() {
                   });
                   setAuth(authRes.user, authRes.access_token, authRes.refresh_token);
                   navigate('/analyze', { replace: true });
-                } catch {
-                  setServerError('Google authentication failed. Please check your credentials.');
+                } catch (err: unknown) {
+                  const axiosErr = err as { response?: { data?: { detail?: string } }; message?: string };
+                  const errorMsg =
+                    axiosErr?.response?.data?.detail ||
+                    axiosErr?.message ||
+                    'Google authentication failed. Please check your credentials.';
+                  setServerError(errorMsg);
                 } finally {
                   setGoogleLoading(false);
                 }
+              } else if (response.error) {
+                setGoogleLoading(false);
+                if (response.error !== 'popup_closed_by_user') {
+                  setServerError(`Google sign-in was not completed: ${response.error}`);
+                }
               }
             },
-            error_callback: () => {
+            error_callback: (err: unknown) => {
               setGoogleLoading(false);
+              const errObj = err as { type?: string; message?: string };
+              if (errObj?.type && errObj.type !== 'popup_closed_by_user') {
+                setServerError(`Google sign-in error: ${errObj.type}`);
+              }
             },
           });
           client.requestCode();
@@ -213,8 +240,13 @@ export default function LoginPage() {
                   const authRes = await loginWithGoogle({ credential: res.credential });
                   setAuth(authRes.user, authRes.access_token, authRes.refresh_token);
                   navigate('/analyze', { replace: true });
-                } catch {
-                  setServerError('Google token validation failed.');
+                } catch (err: unknown) {
+                  const axiosErr = err as { response?: { data?: { detail?: string } }; message?: string };
+                  const errorMsg =
+                    axiosErr?.response?.data?.detail ||
+                    axiosErr?.message ||
+                    'Google token validation failed.';
+                  setServerError(errorMsg);
                 } finally {
                   setGoogleLoading(false);
                 }
@@ -245,8 +277,13 @@ export default function LoginPage() {
       setAuth(response.user, response.access_token, response.refresh_token);
       setIsGoogleModalOpen(false);
       navigate('/analyze', { replace: true });
-    } catch {
-      setServerError('Google sign-in failed. Please try again.');
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { detail?: string } }; message?: string };
+      const errorMsg =
+        axiosErr?.response?.data?.detail ||
+        axiosErr?.message ||
+        'Google sign-in failed. Please try again.';
+      setServerError(errorMsg);
     } finally {
       setGoogleLoading(false);
     }

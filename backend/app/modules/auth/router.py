@@ -226,9 +226,17 @@ async def google_auth(
                                 full_name = u_info.get("name")
                 else:
                     logger.warning("google_code_exchange_failed", status=token_resp.status_code, body=token_resp.text)
+                    detail_msg = "Failed to exchange Google authorization code."
+                    try:
+                        err_payload = token_resp.json()
+                        err_desc = err_payload.get("error_description") or err_payload.get("error")
+                        if err_desc:
+                            detail_msg = f"Google OAuth error: {err_desc}"
+                    except Exception:
+                        pass
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="Failed to exchange Google authorization code.",
+                        detail=detail_msg,
                     )
         except HTTPException:
             raise
